@@ -11,13 +11,19 @@ app.use(session({
     saveUninitialized: true 
 }));
 
-// --- 1. USER SCHEMA ---
+// --- 1. USER SCHEMA (Includes Referral Tracking) ---
 const UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
     balance: { type: Number, default: 0 },
     lockedBonus: { type: Number, default: 0 },
     bonusReleaseDate: { type: Date },
+    referredBy: { type: String, default: null }, // Stores the email of the person who referred them
+    pendingDeposits: [{
+        amount: Number,
+        status: { type: String, default: 'Pending' },
+        date: { type: Date, default: Date.now }
+    }],
     transactions: [{
         type: { type: String },
         amount: Number,
@@ -26,9 +32,11 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// --- 2. USER ROUTES ---
+// --- 2. AUTH & DASHBOARD ---
 
 app.get('/', (req, res) => {
+    // Check if there is a referral code in the URL
+    const ref = req.query.ref || '';
     res.send(`
         <style>
             body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin:0; }
@@ -41,18 +49,21 @@ app.get('/', (req, res) => {
             <form action="/login" method="POST">
                 <input type="email" name="email" placeholder="Email Address" required>
                 <input type="password" name="password" placeholder="Password" required>
+                <input type="hidden" name="referredBy" value="${ref}">
                 <button type="submit">Login / Register</button>
             </form>
+            ${ref ? `<p style="font-size:12px; color:green; text-align:center;">Referred by: ${ref}</p>` : ''}
         </div>
     `);
 });
 
 app.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, referredBy } = req.body;
     let user = await User.findOne({ email });
     if (!user) {
         const hashed = await bcrypt.hash(password, 10);
-        user = await User.create({ email, password: hashed });
+        // Create user with referral info if available
+        user = await User.create({ email, password: hashed, referredBy: referredBy || null });
     }
     const match = await bcrypt.compare(password, user.password);
     if (match) {
@@ -67,11 +78,25 @@ app.get('/dashboard', async (req, res) => {
 
     const canClaim = user.bonusReleaseDate && new Date() >= user.bonusReleaseDate;
     const dateStr = user.bonusReleaseDate ? user.bonusReleaseDate.toLocaleDateString() : 'N/A';
+    
+    // Referral Link Generation
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const referralLink = `${protocol}://${host}/?ref=${user.email}`;
+
+    const waMessage = encodeURIComponent("Welcome to the right place where your money grows with certainty, our AI trading machine guarantee you 20% of return no matter what, the only thing you need to do deposit and funds lock for 30 days and you make your 20% doing nothing, we trade with liquid asset as gold, lithium, cobalt and digital currency. your money is safe");
 
     res.send(`
         <style>
-            body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
-            .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
+            body { font-family: sans-serif; background: #f4f7f6; padding: 0; margin: 0; color: #333; }
+            .ticker-wrap { width: 100%; overflow: hidden; background: #2c3e50; color: #fff; padding: 10px 0; border-bottom: 2px solid #f39c12; }
+            .ticker { display: flex; white-space: nowrap; animation: ticker 45s linear infinite; }
+            .ticker-item { padding: 0 40px; font-size: 14px; font-weight: bold; }
+            .ticker-item span { color: #2ecc71; margin-left: 5px; }
+            .gold-text { color: #f1c40f !important; }
+            @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+            .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 900px; margin: 20px auto; }
             .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
             .box { padding: 20px; border-radius: 8px; text-align: center; color: white; }
             .balance-box { background: #2ecc71; }
@@ -80,15 +105,22 @@ app.get('/dashboard', async (req, res) => {
             .section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
             input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; margin: 5px 0; width: 100%; box-sizing: border-box; }
             .btn { padding: 10px 20px; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
-            .btn-dep { background: #27ae60; } .btn-wit { background: #e74c3c; } .btn-tra { background: #3498db; } .btn-claim { background: #8e44ad; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-            th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+            .btn-dep { background: #27ae60; } .btn-tra { background: #3498db; }
+            
+            .ref-box { background: #ebf5fb; padding: 15px; border-radius: 8px; border: 1px dashed #3498db; margin-top: 10px; }
         </style>
 
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <div class="ticker-item">ROADMAP: <span class="gold-text">New Token Release Backed by Gold (EAC & ECOWA) in 12 Months!</span></div>
+                <div class="ticker-item">BITCOIN: <span id="btc-price">Fetching...</span></div>
+                <div class="ticker-item">ASSET RESERVES: <span class="gold-text">Gold, Lithium, Cobalt</span></div>
+                <div class="ticker-item">REFERRAL BONUS: <span>Get 5% Commission on Friends' Deposits!</span></div>
+            </div>
+        </div>
+
         <div class="card">
-            <h2>Financial Dashboard</h2>
-            <p>Welcome: <strong>${user.email}</strong></p>
-            
+            <h2>Finance Dashboard</h2>
             <div class="stats-grid">
                 <div class="box balance-box">
                     <p>Available Balance</p>
@@ -101,78 +133,135 @@ app.get('/dashboard', async (req, res) => {
                 </div>
             </div>
 
-            ${user.lockedBonus > 0 ? `
-                <form action="/claim-bonus" method="POST" class="section">
-                    <p>Claim your 20% bonus after 30 days.</p>
-                    <button type="submit" class="btn btn-claim" ${!canClaim ? 'disabled' : ''}>
-                        ${canClaim ? 'Claim Bonus Now' : 'Bonus Currently Locked'}
-                    </button>
-                </form>
-            ` : ''}
+            <div class="section">
+                <h3>Affiliate Program</h3>
+                <p style="font-size:14px;">Share your link and earn <strong>5%</strong> of every deposit your friends make!</p>
+                <div class="ref-box">
+                    <code style="font-size:14px;">${referralLink}</code>
+                </div>
+            </div>
 
             <div class="section">
-                <h3>Deposit & Withdraw</h3>
+                <h3>Deposit & AI Trading</h3>
                 <form action="/deposit" method="POST">
-                    <input type="number" name="amount" placeholder="Deposit Amount" step="0.01" required>
-                    <button type="submit" class="btn btn-dep">Deposit + 20% Bonus</button>
+                    <input type="number" name="amount" placeholder="Amount to Deposit" step="0.01" required>
+                    <button type="submit" class="btn btn-dep">Get Payment Details</button>
                 </form>
             </div>
 
             <div class="section">
-                <h3>Transfer Money</h3>
+                <h3>Internal Transfer</h3>
                 <form action="/transfer" method="POST">
                     <input type="email" name="recipientEmail" placeholder="Recipient Email" required>
-                    <input type="number" name="amount" placeholder="Amount to Send" step="0.01" required>
+                    <input type="number" name="amount" placeholder="Amount" step="0.01" required>
                     <button type="submit" class="btn btn-tra">Send Money</button>
                 </form>
             </div>
-
-            <h3>History</h3>
-            <table>
-                <tr><th>Type</th><th>Amount</th><th>Date</th></tr>
-                ${user.transactions.slice().reverse().map(t => `
-                    <tr>
-                        <td style="color: ${t.type.includes('Deposit') || t.type.includes('In') ? 'green' : 'red'}"><strong>${t.type}</strong></td>
-                        <td>$${t.amount.toFixed(2)}</td>
-                        <td>${new Date(t.date).toLocaleDateString()}</td>
-                    </tr>
-                `).join('')}
-            </table>
-            <p style="text-align:center; margin-top:20px;"><a href="/logout">Logout</a></p>
         </div>
+
+        <a href="https://wa.me/46704406175?text=${waMessage}" target="_blank" class="whatsapp-btn" style="position: fixed; bottom: 30px; right: 30px; background: #25d366; color: white; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: bold;">
+            Chat Support
+        </a>
+
+        <script>
+            async function getPrices() {
+                try {
+                    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+                    const data = await res.json();
+                    document.getElementById('btc-price').innerText = '$' + data.bitcoin.usd.toLocaleString();
+                } catch (e) {}
+            }
+            getPrices(); setInterval(getPrices, 60000);
+        </script>
     `);
 });
 
-// --- 3. CORE FINANCIAL LOGIC ---
+// --- 3. LOGIC (Includes Referral Payout) ---
 
 app.post('/deposit', async (req, res) => {
     const amount = parseFloat(req.body.amount);
-    if (amount <= 0) return res.send("Invalid amount");
     const user = await User.findById(req.session.userId);
-    
-    user.balance += amount;
-    const bonus = amount * 0.20;
-    user.lockedBonus += bonus;
-    
-    const releaseDate = new Date();
-    releaseDate.setDate(releaseDate.getDate() + 30); 
-    user.bonusReleaseDate = releaseDate;
-
-    user.transactions.push({ type: 'Deposit', amount: amount });
-    user.transactions.push({ type: 'Locked Bonus', amount: bonus });
+    user.pendingDeposits.push({ amount: amount });
     await user.save();
-    res.redirect('/dashboard');
+    res.send(`
+        <body style="font-family:sans-serif; text-align:center; padding:50px; background:#f4f7f6;">
+            <div style="background:white; padding:30px; border-radius:12px; border:1px solid #ddd; display:inline-block;">
+                <h2>Deposit Instructions</h2>
+                <p>Transfer <strong>$${amount.toFixed(2)}</strong> to secure your 20% yield.</p>
+                <div style="text-align:left; background:#eee; padding:15px; border-radius:8px; line-height:1.6; font-size:14px;">
+                    <strong>BTC:</strong> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7<br>
+                    <strong>US Bank:</strong> Bank of America | 026009593<br>
+                    <strong>EU Barclay:</strong> GB33BARC20658259151311<br>
+                    <strong>Ref:</strong> ${user.email}
+                </div>
+                <br><a href="/dashboard"><button style="padding:10px 20px; cursor:pointer;">Back</button></a>
+            </div>
+        </body>
+    `);
 });
 
-app.post('/claim-bonus', async (req, res) => {
-    const user = await User.findById(req.session.userId);
-    if (new Date() < user.bonusReleaseDate) return res.send("Bonus is still locked!");
+app.post('/admin/approve-deposit', async (req, res) => {
+    const admin = await User.findById(req.session.userId);
+    if (admin.email !== "emmanuel.iyere84@gmail.com") return res.send("Denied");
     
-    user.balance += user.lockedBonus;
-    user.transactions.push({ type: 'Bonus Claimed', amount: user.lockedBonus });
-    user.lockedBonus = 0;
-    await user.save();
-    res.redirect('/dashboard');
+    const { userId, depId } = req.body;
+    const user = await User.findById(userId);
+    const deposit = user.pendingDeposits.id(depId);
+
+    if (deposit && deposit.status === 'Pending') {
+        deposit.status = 'Approved';
+        user.balance += deposit.amount;
+        user.lockedBonus += (deposit.amount * 0.20);
+        
+        const releaseDate = new Date();
+        releaseDate.setDate(releaseDate.getDate() + 30);
+        user.bonusReleaseDate = releaseDate;
+        user.transactions.push({ type: 'Deposit Approved', amount: deposit.amount });
+
+        // --- REFERRAL COMMISSION LOGIC ---
+        if (user.referredBy) {
+            const referrer = await User.findOne({ email: user.referredBy });
+            if (referrer) {
+                const commission = deposit.amount * 0.05; // 5% Commission
+                referrer.balance += commission;
+                referrer.transactions.push({ type: `Referral Reward (${user.email})`, amount: commission });
+                await referrer.save();
+            }
+        }
+
+        await user.save();
+    }
+    res.redirect('/admin-secret-panel');
+});
+
+app.get('/admin-secret-panel', async (req, res) => {
+    const admin = await User.findById(req.session.userId);
+    if (!admin || admin.email !== "emmanuel.iyere84@gmail.com") return res.send("Denied");
+    const users = await User.find({});
+    res.send(`
+        <body style="font-family:sans-serif; background:#2c3e50; color:white; padding:40px;">
+            <h2>Approval Center</h2>
+            <table border="1" style="width:100%; background:white; color:black; border-collapse:collapse;">
+                <tr style="background:#eee;"><th>User</th><th>Pending</th><th>Referred By</th></tr>
+                ${users.map(u => `
+                    <tr>
+                        <td style="padding:10px;">${u.email}</td>
+                        <td style="padding:10px;">
+                            ${u.pendingDeposits.filter(d => d.status === 'Pending').map(dep => `
+                                <form action="/admin/approve-deposit" method="POST">
+                                    $${dep.amount} <input type="hidden" name="userId" value="${u._id}">
+                                    <input type="hidden" name="depId" value="${dep._id}">
+                                    <button type="submit" style="background:green; color:white;">Approve</button>
+                                </form>
+                            `).join('') || 'None'}
+                        </td>
+                        <td style="padding:10px;">${u.referredBy || 'Organic'}</td>
+                    </tr>
+                `).join('')}
+            </table>
+            <br><a href="/dashboard" style="color:white;">Dashboard</a>
+        </body>
+    `);
 });
 
 app.post('/transfer', async (req, res) => {
@@ -180,54 +269,15 @@ app.post('/transfer', async (req, res) => {
     const tAmt = parseFloat(amount);
     const sender = await User.findById(req.session.userId);
     const recipient = await User.findOne({ email: recipientEmail });
-
-    if (!recipient) return res.send("Recipient not found.");
-    if (tAmt > sender.balance) return res.send("Insufficient funds.");
-    
-    sender.balance -= tAmt;
-    sender.transactions.push({ type: 'Transfer Out', amount: tAmt });
-    recipient.balance += tAmt;
-    recipient.transactions.push({ type: 'Transfer In', amount: tAmt });
-
-    await sender.save();
-    await recipient.save();
+    if (!recipient || tAmt > sender.balance) return res.send("Failed");
+    sender.balance -= tAmt; recipient.balance += tAmt;
+    await sender.save(); await recipient.save();
     res.redirect('/dashboard');
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/'); });
 
-// --- 4. ADMIN PANEL (PASTED BEFORE SERVER START) ---
-
-app.get('/admin-secret-panel', async (req, res) => {
-    const ADMIN_EMAIL = "emmanuel.iyere84@gmail.com"; 
-    const currentUser = await User.findById(req.session.userId);
-    
-    if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-        return res.send("Access Denied.");
-    }
-
-    const allUsers = await User.find({});
-    res.send(`
-        <body style="font-family:sans-serif; background:#2c3e50; color:white; padding:40px;">
-            <h1>Admin Panel</h1>
-            <table border="1" style="width:100%; border-collapse:collapse; background:white; color:black;">
-                <tr style="background:#eee;"><th>Email</th><th>Balance</th><th>Locked Bonus</th><th>Unlock Date</th></tr>
-                ${allUsers.map(u => `
-                    <tr>
-                        <td>${u.email}</td>
-                        <td>$${u.balance.toFixed(2)}</td>
-                        <td>$${u.lockedBonus.toFixed(2)}</td>
-                        <td>${u.bonusReleaseDate ? u.bonusReleaseDate.toLocaleDateString() : 'N/A'}</td>
-                    </tr>
-                `).join('')}
-            </table>
-            <br><a href="/dashboard" style="color:white;">Back to Dashboard</a>
-        </body>
-    `);
-});
-
-// --- 5. SERVER STARTUP (ALWAYS LAST) ---
 const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI).then(() => {
-    app.listen(process.env.PORT || 3000, () => console.log("Server Live"));
-}).catch(err => console.log(err));
+    app.listen(process.env.PORT || 3000, () => console.log("Live"));
+});
