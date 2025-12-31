@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// --- 2. THE DASHBOARD (CLIENT SIDE) ---
+// --- 2. THE DASHBOARD ---
 app.get('/dashboard', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = await User.findById(req.session.userId);
@@ -36,12 +36,10 @@ app.get('/dashboard', async (req, res) => {
     res.send(`
         <head>
             <title>BlezzyPay Finance - Dashboard</title>
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-            <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script>
         </head>
         <style>
             body { font-family: sans-serif; background: #f4f7f6; margin: 0; color: #333; }
-            .ticker-wrap { width: 100%; overflow: hidden; background: #2c3e50; color: #fff; padding: 10px 0; border-bottom: 2px solid #f39c12; }
+            .ticker-wrap { width: 100%; overflow: hidden; background: #2c3e50; color: #fff; padding: 12px 0; border-bottom: 3px solid #f39c12; }
             .ticker { display: flex; white-space: nowrap; animation: ticker 45s linear infinite; }
             .ticker-item { padding: 0 40px; font-size: 14px; font-weight: bold; }
             @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -55,10 +53,27 @@ app.get('/dashboard', async (req, res) => {
             
             .section { margin-bottom: 25px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
             .btn { padding: 12px; border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
-            
+
+            /* --- LOGO GRID FIXED --- */
             .partner-section { margin-top: 50px; padding-top: 30px; border-top: 2px solid #eee; text-align: center; }
-            .partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 30px; align-items: center; justify-items: center; margin-top: 20px; }
-            .partner-item img { height: 35px; width: auto; opacity: 1; transition: 0.3s; }
+            .partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 20px; margin-top: 25px; padding: 10px; }
+            .partner-item { 
+                background: white; 
+                padding: 15px; 
+                border-radius: 10px; 
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;
+                height: 50px;
+                border: 1px solid #eee;
+            }
+            .partner-item img { 
+                max-height: 35px; 
+                max-width: 100%; 
+                display: block;
+                object-fit: contain;
+            }
             
             table { width: 100%; border-collapse: collapse; margin-top: 15px; }
             th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
@@ -69,13 +84,13 @@ app.get('/dashboard', async (req, res) => {
             <div class="ticker">
                 <div class="ticker-item">ROADMAP: <span style="color:#f1c40f;">New Gold-Backed Token (EAC & ECOWA) in 12 Months!</span></div>
                 <div class="ticker-item">BITCOIN: <span id="btc-price" style="color:#2ecc71;">Fetching...</span></div>
-                <div class="ticker-item">ASSET RESERVES: <span style="color:#f1c40f;">Gold, Lithium, Cobalt</span></div>
+                <div class="ticker-item">AI ASSETS: <span style="color:#f1c40f;">Gold, Lithium, Cobalt</span></div>
             </div>
         </div>
 
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Financial Center</h2>
+                <h2>BlezzyPay Financial Center</h2>
                 <a href="/logout" style="color:#e74c3c; text-decoration:none; font-weight:bold;">Logout</a>
             </div>
 
@@ -87,7 +102,7 @@ app.get('/dashboard', async (req, res) => {
                 <div class="box bonus-box">
                     <p>AI Trading Yield (20%)</p>
                     <div class="amount">$${user.lockedBonus.toFixed(2)}</div>
-                    <small>Available on: ${dateStr}</small>
+                    <small>Unlocks: ${dateStr}</small>
                 </div>
             </div>
 
@@ -106,8 +121,8 @@ app.get('/dashboard', async (req, res) => {
             </div>
 
             <div class="section">
-                <h3>Affiliate Link (5% Commission)</h3>
-                <code style="background:#eee; padding:10px; display:block; border-radius:5px;">${referralLink}</code>
+                <h3>Affiliate Program</h3>
+                <code style="background:#eee; padding:10px; display:block; border-radius:5px; font-size:12px;">${referralLink}</code>
             </div>
 
             <div class="section">
@@ -117,19 +132,24 @@ app.get('/dashboard', async (req, res) => {
                     <tbody>
                         ${user.transactions.slice().reverse().map(t => `
                             <tr><td>${t.type}</td><td>$${t.amount.toFixed(2)}</td><td>${new Date(t.date).toLocaleDateString()}</td></tr>
-                        `).join('') || '<tr><td colspan="3">No transactions yet.</td></tr>'}
+                        `).join('') || '<tr><td colspan="3">No transactions found.</td></tr>'}
                     </tbody>
                 </table>
             </div>
 
             <div class="partner-section">
-                <h3>Global Partners</h3>
+                <h3 style="color:#2c3e50;">Strategic Global Partners</h3>
                 <div class="partner-grid">
-                    <a href="https://www.binance.com" target="_blank" class="partner-item"><img src="https://logo.clearbit.com/binance.com"></a>
-                    <a href="https://www.hsbc.com.hk" target="_blank" class="partner-item"><img src="https://logo.clearbit.com/hsbc.com"></a>
-                    <a href="https://www.coinbase.com" target="_blank" class="partner-item"><img src="https://logo.clearbit.com/coinbase.com"></a>
-                    <a href="https://www.amazon.com" target="_blank" class="partner-item"><img src="https://logo.clearbit.com/amazon.com"></a>
-                    <a href="https://www.ecobank.com" target="_blank" class="partner-item"><img src="https://logo.clearbit.com/ecobank.com"></a>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/binance.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/hsbc.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/coinbase.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/amazon.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/ecobank.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/mcdonalds.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/standardbank.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/investec.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/swedbank.com"></div>
+                    <div class="partner-item"><img src="https://logo.clearbit.com/accessbankplc.com"></div>
                 </div>
             </div>
         </div>
@@ -149,7 +169,7 @@ app.get('/dashboard', async (req, res) => {
     `);
 });
 
-// --- 3. CORE LOGIC (DEPOSITS, WITHDRAWALS, REFERRALS) ---
+// --- 3. CORE FINANCIAL LOGIC ---
 
 app.post('/deposit', async (req, res) => {
     const amount = parseFloat(req.body.amount);
@@ -157,17 +177,15 @@ app.post('/deposit', async (req, res) => {
     user.pendingDeposits.push({ amount: amount });
     await user.save();
     res.send(`
-        <body style="font-family:sans-serif; text-align:center; padding:50px;">
-            <h2>Action Required: Manual Payment</h2>
-            <div style="background:#eee; padding:20px; border-radius:10px; display:inline-block; text-align:left;">
+        <body style="font-family:sans-serif; text-align:center; padding:50px; background:#f4f7f6;">
+            <div style="background:white; padding:30px; border-radius:12px; display:inline-block; border:1px solid #ddd; text-align:left;">
+                <h2 style="text-align:center;">Payment Details</h2>
                 <strong>US Bank:</strong> Bank of America | 026009593<br>
-                <strong>EU Bank:</strong> Barclay | GB33BARC20658259151311 (Ref: infogloirebanco)<br>
-                <strong>Uganda:</strong> Equity Bank | 1003103498481 (Ref: Annet)<br>
-                <strong>South Africa:</strong> Capitek | 1882242481 (Ref: BlezzyPay)<br>
-                <strong>BTC:</strong> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
+                <strong>EU Bank:</strong> Barclay | GB33BARC20658259151311<br>
+                <strong>BTC:</strong> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7<br><br>
+                <strong>Reference:</strong> ${user.email}<br><br>
+                <div style="text-align:center;"><a href="/dashboard">Return to Dashboard</a></div>
             </div>
-            <p>Your deposit will be approved once funds are verified.</p>
-            <a href="/dashboard">Return to Dashboard</a>
         </body>
     `);
 });
@@ -178,8 +196,10 @@ app.post('/withdraw', async (req, res) => {
     if (amount > user.balance) return res.send("Insufficient funds.");
     user.pendingWithdrawals.push({ amount: amount });
     await user.save();
-    res.send("<body style='font-family:sans-serif; text-align:center; padding:50px;'><h2>Withdrawal Sent</h2><p>Admin will verify and contact you.</p><a href='/dashboard'>Back</a></body>");
+    res.send("<body style='font-family:sans-serif; text-align:center; padding:50px;'><h2>Request Sent</h2><p>Admin is processing your payout.</p><a href='/dashboard'>Back</a></body>");
 });
+
+// --- 4. ADMIN PANEL ---
 
 app.post('/admin/approve-deposit', async (req, res) => {
     const admin = await User.findById(req.session.userId);
@@ -193,16 +213,10 @@ app.post('/admin/approve-deposit', async (req, res) => {
         user.lockedBonus += (deposit.amount * 0.20);
         const releaseDate = new Date(); releaseDate.setDate(releaseDate.getDate() + 30);
         user.bonusReleaseDate = releaseDate;
-        user.transactions.push({ type: 'AI Trade Deposit Approved', amount: deposit.amount });
-        // Affiliate 5% Commission
+        user.transactions.push({ type: 'Deposit Approved', amount: deposit.amount });
         if (user.referredBy) {
             const ref = await User.findOne({ email: user.referredBy });
-            if (ref) { 
-                const commission = deposit.amount * 0.05;
-                ref.balance += commission; 
-                ref.transactions.push({ type: 'Affiliate Reward', amount: commission }); 
-                await ref.save(); 
-            }
+            if (ref) { ref.balance += (deposit.amount * 0.05); ref.transactions.push({ type: 'Affiliate Reward', amount: (deposit.amount * 0.05) }); await ref.save(); }
         }
         await user.save();
     }
@@ -224,7 +238,6 @@ app.post('/admin/approve-withdrawal', async (req, res) => {
     res.redirect('/admin-secret-panel');
 });
 
-// --- 4. MASTER ADMIN PANEL (GOD MODE) ---
 app.get('/admin-secret-panel', async (req, res) => {
     const admin = await User.findById(req.session.userId);
     if (!admin || admin.email !== "emmanuel.iyere84@gmail.com") return res.send("Denied");
@@ -234,10 +247,10 @@ app.get('/admin-secret-panel', async (req, res) => {
 
     res.send(`
         <body style="font-family:sans-serif; background:#2c3e50; color:white; padding:40px;">
-            <h1>Master Control Center</h1>
+            <h1>Master Admin Panel</h1>
             <div style="display:flex; gap:20px; margin-bottom:20px;">
-                <div style="background:#27ae60; padding:15px; border-radius:8px;">Total User Funds: $${totalFunds.toFixed(2)}</div>
-                <div style="background:#f39c12; padding:15px; border-radius:8px;">Total Future Bonuses: $${totalBonus.toFixed(2)}</div>
+                <div style="background:#27ae60; padding:15px; border-radius:8px;">Total Assets: $${totalFunds.toFixed(2)}</div>
+                <div style="background:#f39c12; padding:15px; border-radius:8px;">Total Bonus Debt: $${totalBonus.toFixed(2)}</div>
             </div>
             <table border="1" style="width:100%; background:white; color:black; border-collapse:collapse;">
                 <tr style="background:#eee;"><th>User</th><th>Balance</th><th>Actions Required</th></tr>
@@ -249,13 +262,13 @@ app.get('/admin-secret-panel', async (req, res) => {
                             ${u.pendingDeposits.filter(d => d.status === 'Pending').map(d => `
                                 <form action="/admin/approve-deposit" method="POST">
                                     DEP: $${d.amount} <input type="hidden" name="userId" value="${u._id}"><input type="hidden" name="depId" value="${d._id}">
-                                    <button style="background:green; color:white;">Approve</button>
+                                    <button style="background:green; color:white; cursor:pointer;">Approve</button>
                                 </form>
                             `).join('')}
                             ${u.pendingWithdrawals.filter(w => w.status === 'Pending').map(w => `
                                 <form action="/admin/approve-withdrawal" method="POST">
                                     WIT: $${w.amount} <input type="hidden" name="userId" value="${u._id}"><input type="hidden" name="witId" value="${w._id}">
-                                    <button style="background:orange; color:white;">Confirm Payout</button>
+                                    <button style="background:orange; color:white; cursor:pointer;">Payout</button>
                                 </form>
                             `).join('')}
                         </td>
@@ -267,7 +280,7 @@ app.get('/admin-secret-panel', async (req, res) => {
     `);
 });
 
-// --- 5. AUTHENTICATION & SERVER START ---
+// --- 5. AUTH & STARTUP ---
 app.get('/', (req, res) => {
     const ref = req.query.ref || '';
     res.send(`<body style="font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f2f5;">
@@ -276,7 +289,7 @@ app.get('/', (req, res) => {
             <input type="email" name="email" placeholder="Email" required style="display:block; width:100%; padding:10px; margin-bottom:10px;">
             <input type="password" name="password" placeholder="Password" required style="display:block; width:100%; padding:10px; margin-bottom:10px;">
             <input type="hidden" name="referredBy" value="${ref}">
-            <button type="submit" style="width:100%; padding:12px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:bold;">Login / Register</button>
+            <button type="submit" style="width:100%; padding:12px; background:#007bff; color:white; border:none; cursor:pointer; font-weight:bold;">Enter System</button>
         </form>
     </body>`);
 });
@@ -289,7 +302,7 @@ app.post('/login', async (req, res) => {
         user = await User.create({ email, password: hashed, referredBy: referredBy || null });
     }
     const match = await bcrypt.compare(password, user.password);
-    if (match) { req.session.userId = user._id; res.redirect('/dashboard'); } else { res.send("Invalid credentials."); }
+    if (match) { req.session.userId = user._id; res.redirect('/dashboard'); } else { res.send("Error."); }
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/'); });
