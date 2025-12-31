@@ -11,7 +11,7 @@ app.use(session({
     saveUninitialized: true 
 }));
 
-// --- 1. USER SCHEMA (Includes Balance, Locked Bonus, and History) ---
+// --- 1. USER SCHEMA ---
 const UserSchema = new mongoose.Schema({
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
@@ -26,9 +26,8 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
-// --- 2. ROUTES ---
+// --- 2. USER ROUTES ---
 
-// Home/Login Page
 app.get('/', (req, res) => {
     res.send(`
         <style>
@@ -48,7 +47,6 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Login/Register Logic
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
@@ -63,7 +61,6 @@ app.post('/login', async (req, res) => {
     } else { res.send("Invalid credentials. <a href='/'>Try again</a>"); }
 });
 
-// Dashboard View
 app.get('/dashboard', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = await User.findById(req.session.userId);
@@ -106,7 +103,7 @@ app.get('/dashboard', async (req, res) => {
 
             ${user.lockedBonus > 0 ? `
                 <form action="/claim-bonus" method="POST" class="section">
-                    <p>Claim your 20% compensation after 30 days.</p>
+                    <p>Claim your 20% bonus after 30 days.</p>
                     <button type="submit" class="btn btn-claim" ${!canClaim ? 'disabled' : ''}>
                         ${canClaim ? 'Claim Bonus Now' : 'Bonus Currently Locked'}
                     </button>
@@ -118,10 +115,6 @@ app.get('/dashboard', async (req, res) => {
                 <form action="/deposit" method="POST">
                     <input type="number" name="amount" placeholder="Deposit Amount" step="0.01" required>
                     <button type="submit" class="btn btn-dep">Deposit + 20% Bonus</button>
-                </form>
-                <form action="/withdraw" method="POST" style="margin-top:10px;">
-                    <input type="number" name="amount" placeholder="Withdraw Amount" step="0.01" required>
-                    <button type="submit" class="btn btn-wit">Withdraw</button>
                 </form>
             </div>
 
@@ -150,9 +143,8 @@ app.get('/dashboard', async (req, res) => {
     `);
 });
 
-// --- 3. CORE LOGIC ---
+// --- 3. CORE FINANCIAL LOGIC ---
 
-// Deposit + 20% Bonus
 app.post('/deposit', async (req, res) => {
     const amount = parseFloat(req.body.amount);
     if (amount <= 0) return res.send("Invalid amount");
@@ -163,7 +155,7 @@ app.post('/deposit', async (req, res) => {
     user.lockedBonus += bonus;
     
     const releaseDate = new Date();
-    releaseDate.setDate(releaseDate.getDate() + 30); // 30 Day Lock
+    releaseDate.setDate(releaseDate.getDate() + 30); 
     user.bonusReleaseDate = releaseDate;
 
     user.transactions.push({ type: 'Deposit', amount: amount });
@@ -172,7 +164,6 @@ app.post('/deposit', async (req, res) => {
     res.redirect('/dashboard');
 });
 
-// Claiming the Bonus
 app.post('/claim-bonus', async (req, res) => {
     const user = await User.findById(req.session.userId);
     if (new Date() < user.bonusReleaseDate) return res.send("Bonus is still locked!");
@@ -184,18 +175,6 @@ app.post('/claim-bonus', async (req, res) => {
     res.redirect('/dashboard');
 });
 
-// Withdraw
-app.post('/withdraw', async (req, res) => {
-    const amount = parseFloat(req.body.amount);
-    const user = await User.findById(req.session.userId);
-    if (amount > user.balance) return res.send("Insufficient funds.");
-    user.balance -= amount;
-    user.transactions.push({ type: 'Withdraw', amount: amount });
-    await user.save();
-    res.redirect('/dashboard');
-});
-
-// Transfer
 app.post('/transfer', async (req, res) => {
     const { recipientEmail, amount } = req.body;
     const tAmt = parseFloat(amount);
@@ -217,7 +196,37 @@ app.post('/transfer', async (req, res) => {
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/'); });
 
-// --- STARTUP ---
+// --- 4. ADMIN PANEL (PASTED BEFORE SERVER START) ---
+
+app.get('/admin-secret-panel', async (req, res) => {
+    const ADMIN_EMAIL = "emmanuel.iyere84@gmail.com"; 
+    const currentUser = await User.findById(req.session.userId);
+    
+    if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+        return res.send("Access Denied.");
+    }
+
+    const allUsers = await User.find({});
+    res.send(`
+        <body style="font-family:sans-serif; background:#2c3e50; color:white; padding:40px;">
+            <h1>Admin Panel</h1>
+            <table border="1" style="width:100%; border-collapse:collapse; background:white; color:black;">
+                <tr style="background:#eee;"><th>Email</th><th>Balance</th><th>Locked Bonus</th><th>Unlock Date</th></tr>
+                ${allUsers.map(u => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td>$${u.balance.toFixed(2)}</td>
+                        <td>$${u.lockedBonus.toFixed(2)}</td>
+                        <td>${u.bonusReleaseDate ? u.bonusReleaseDate.toLocaleDateString() : 'N/A'}</td>
+                    </tr>
+                `).join('')}
+            </table>
+            <br><a href="/dashboard" style="color:white;">Back to Dashboard</a>
+        </body>
+    `);
+});
+
+// --- 5. SERVER STARTUP (ALWAYS LAST) ---
 const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI).then(() => {
     app.listen(process.env.PORT || 3000, () => console.log("Server Live"));
