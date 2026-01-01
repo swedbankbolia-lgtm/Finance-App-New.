@@ -2,40 +2,41 @@ const express = require('express');
 const session = require('express-session');
 const app = express();
 
-// --- CONFIG ---
+// --- CONFIGURATION ---
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'blezzy_key_99', resave: false, saveUninitialized: true }));
 
-// --- PARTNERS (Citi & Morgan Stanley Added) ---
+// --- PARTNERS (Strictly Citi & Morgan Stanley) ---
 const partners = [
-    { name: "Citi", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
-    { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" },
-    { name: "Standard Chartered", link: "https://www.sc.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" },
-    { name: "Bank of America", link: "https://www.bankofamerica.com", img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" },
-    { name: "JPMorgan", link: "https://www.jpmorganchase.com", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" },
-    { name: "Goldman Sachs", link: "https://www.goldmansachs.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" },
-    { name: "BNY Mellon", link: "https://www.bnymellon.com", img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" },
-    { name: "BNP Paribas", link: "https://mabanque.bnpparibas", img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" },
-    { name: "MUFG", link: "https://www.mufg.jp", img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" },
-    { name: "Investec", link: "https://www.investec.com", img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" },
-    { name: "Revolut", link: "https://www.revolut.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" },
-    { name: "Bunq", link: "https://www.bunq.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/bc/Bunq_logo.svg" },
-    { name: "Swedbank", link: "https://www.swedbank.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/66/Swedbank_logo.svg" },
-    { name: "BBVA", link: "https://www.bbva.com", img: "https://upload.wikimedia.org/wikipedia/commons/e/e3/BBVA_2019.svg" }
+    { 
+        name: "Citi", 
+        link: "https://www.citigroup.com", 
+        img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" 
+    },
+    { 
+        name: "Morgan Stanley", 
+        link: "https://www.morganstanley.com", 
+        img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" 
+    }
 ];
 
-// --- DATABASE ---
+// --- DATABASE (In-Memory) ---
 const users = [
-    { id: "admin", email: "emmanuel.iyere84@gmail.com", passcode: "1234", isAdmin: true, transactions: [] },
+    { 
+        id: "admin", 
+        email: "emmanuel.iyere84@gmail.com", 
+        passcode: "1234", 
+        isAdmin: true, 
+        transactions: [] 
+    },
     { 
         id: "user1", 
         email: "user@test.com", 
         passcode: "1111", 
-        
-        // PROFILE DETAILS
-        walletName: "Blezzy Platinum Vault",
+        name: "Demo User",
+        phone: "+1 555 0199",
         address: "Maputo, Mozambique",
-        phone: "+258 84 555 0199",
+        kycStatus: "Verified", // Unverified, Pending, Verified
         
         balance: 0, 
         lockedCapital: 1000, 
@@ -54,15 +55,61 @@ const users = [
 const findUser = (id) => users.find(u => u.id === id);
 const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === e.trim().toLowerCase());
 
-// --- ROUTES ---
+// --- ROUTES: AUTHENTICATION ---
+
+// Login Page
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{background:#f4f6f8;color:#333;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
     .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
     input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
     button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:#000}
-    </style></head><body><div class="box"><h2 style="color:#f0b90b">BlezzyPay</h2><form action="/login" method="POST">
-    <input type="email" name="email" placeholder="Email" required><input type="password" name="passcode" placeholder="Passcode" required><button>LOGIN</button></form></div></body></html>`);
+    a{color:#f0b90b;text-decoration:none;font-size:12px;margin-top:15px;display:block;font-weight:bold}
+    </style></head><body><div class="box"><h2 style="color:#f0b90b">BlezzyPay</h2>
+    <form action="/login" method="POST">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="passcode" placeholder="Passcode" required>
+        <button>SECURE LOGIN</button>
+    </form>
+    <a href="/signup">Create New Account</a>
+    </div></body></html>`);
+});
+
+// Sign Up Page
+app.get('/signup', (req, res) => {
+    res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    body{background:#f4f6f8;color:#333;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
+    button{width:100%;padding:15px;background:#333;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:white}
+    a{color:#666;text-decoration:none;font-size:12px;margin-top:15px;display:block}
+    </style></head><body><div class="box"><h2>New Account</h2>
+    <form action="/register" method="POST">
+        <input type="text" name="name" placeholder="Full Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="password" name="passcode" placeholder="Create Passcode" required>
+        <button>REGISTER</button>
+    </form>
+    <a href="/">Back to Login</a>
+    </div></body></html>`);
+});
+
+app.post('/register', (req, res) => {
+    const { name, email, phone, passcode } = req.body;
+    if (findUserByEmail(email)) return res.send("Email already exists. <a href='/signup'>Try Again</a>");
+    
+    // Create new user
+    const newUser = {
+        id: Date.now().toString(),
+        email, passcode, name, phone,
+        address: "Not Set",
+        kycStatus: "Unverified",
+        balance: 0, lockedCapital: 0, lockedProfit: 0, agtTokens: 0,
+        isAdmin: false, transactions: [], pendingDeposit: null
+    };
+    users.push(newUser);
+    res.redirect('/');
 });
 
 app.post('/login', (req, res) => {
@@ -74,10 +121,11 @@ app.post('/login', (req, res) => {
     res.send('Invalid Credentials. <a href="/">Try Again</a>');
 });
 
-// --- DASHBOARD ---
+// --- ROUTES: DASHBOARD ---
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const u = findUser(req.session.userId);
+    if (!u) return res.redirect('/'); // Handle deleted user
     if (u.isAdmin) return res.redirect('/admin');
 
     const logos = partners.map(p => `<a href="${p.link}" target="_blank"><img src="${p.img}" title="${p.name}" class="logo"></a>`).join('');
@@ -93,20 +141,29 @@ app.get('/dashboard', (req, res) => {
         .btn-y{background:#f0b90b;color:#000} .btn-g{background:#fff;color:#333;border:1px solid #ddd}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
         .stat{background:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
-        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee}
-        .logo{height:35px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} 
+        
+        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee; text-align:center;}
+        .logo{height:45px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} 
         .logo:hover{opacity:1;transform:scale(1.1)}
+
         .tx-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
         .m-con{background:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
         input,select{width:100%;padding:15px;background:#f9f9f9;border:1px solid #ddd;color:#333;margin:10px 0;border-radius:8px;box-sizing:border-box}
         .top-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
         .set-btn{color:#666;font-size:20px;text-decoration:none}
+        .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:#ddd; color:#555; vertical-align:middle;}
+        .verified{background:#e8f5e9; color:#2e7d32;}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
         <div class="top-nav">
-            <div><h3>Hi User</h3><p style="margin:0;font-size:12px;color:#888">BlezzyPay Premier</p></div>
+            <div>
+                <h3>Hi ${u.name.split(' ')[0]} 
+                    <span class="kyc-badge ${u.kycStatus === 'Verified' ? 'verified' : ''}">${u.kycStatus}</span>
+                </h3>
+                <p style="margin:0;font-size:12px;color:#888">BlezzyPay Premier</p>
+            </div>
             <div>
                 <a href="/settings" class="set-btn" style="margin-right:15px"><i class="fa-solid fa-gear"></i></a>
                 <a href="/logout" style="color:red;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
@@ -135,10 +192,14 @@ app.get('/dashboard', (req, res) => {
         </div>
 
         <h3>History</h3>
+        ${u.transactions.length === 0 ? '<p style="color:#999;font-size:12px">No transactions yet.</p>' : ''}
         ${u.transactions.slice().reverse().map(t => `<div class="tx-item"><div><b>${t.type}</b><br><small style="color:#666">${t.details||t.date}</small></div><b>$${t.amount}</b></div>`).join('')}
     </div>
 
-    <div class="logo-wrap"><marquee scrollamount="5">${logos} ${logos}</marquee></div>
+    <div style="text-align:center;font-size:10px;color:#999;text-transform:uppercase;font-weight:bold;background:white;padding-top:20px;">Trusted Partners</div>
+    <div class="logo-wrap">
+        ${logos}
+    </div>
 
     <div id="dep" class="modal"><div class="m-con">
         <h3>Deposit (Locked 30 Days)</h3><form action="/dep" method="POST">
@@ -162,7 +223,7 @@ app.get('/dashboard', (req, res) => {
     </body></html>`);
 });
 
-// --- SETTINGS PAGE ---
+// --- SETTINGS & KYC ---
 app.get('/settings', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const u = findUser(req.session.userId);
@@ -176,33 +237,60 @@ app.get('/settings', (req, res) => {
         .label{font-size:12px;color:#888;margin-bottom:5px;display:block}
         .val{font-size:16px;font-weight:bold;margin-bottom:15px;display:block;border-bottom:1px solid #eee;padding-bottom:10px}
         .btn-close{width:100%;padding:15px;background:#ffebee;color:#d32f2f;border:none;font-weight:bold;border-radius:12px;cursor:pointer}
+        .btn-kyc{width:100%;padding:15px;background:#2c333e;color:white;border:none;font-weight:bold;border-radius:12px;cursor:pointer;margin-bottom:10px}
     </style></head><body>
     <div class="con">
-        <a href="/dashboard" style="color:#333;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-        <h2 style="margin-bottom:20px">Settings</h2>
+        <a href="/dashboard" style="color:#333;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        <h2 style="margin-bottom:20px">Client Settings</h2>
         
         <div class="card">
-            <span class="label">Wallet Name</span>
-            <span class="val">${u.walletName}</span>
+            <span class="label">Full Name</span><span class="val">${u.name}</span>
+            <span class="label">Email Address</span><span class="val">${u.email}</span>
+            <span class="label">Phone Number</span><span class="val">${u.phone}</span>
+            <span class="label">Address</span><span class="val">${u.address}</span>
             
-            <span class="label">Email Address</span>
-            <span class="val">${u.email}</span>
+            <span class="label">KYC Status</span>
+            <span class="val" style="color:${u.kycStatus==='Verified'?'green':'orange'}">${u.kycStatus}</span>
             
-            <span class="label">Phone Number</span>
-            <span class="val">${u.phone}</span>
-            
-            <span class="label">Billing Address</span>
-            <span class="val">${u.address}</span>
+            ${u.kycStatus === 'Unverified' ? `<form action="/kyc-page"><button class="btn-kyc">VERIFY IDENTITY (KYC)</button></form>` : ''}
         </div>
 
         <form action="/close-account" method="POST">
-            <button class="btn-close">CLOSE ACCOUNT</button>
+            <button class="btn-close">CLOSE ACCOUNT PERMANENTLY</button>
         </form>
-    </div>
-    </body></html>`);
+    </div></body></html>`);
+});
+
+app.get('/kyc-page', (req, res) => {
+    res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+    body{background:#f4f6f8;color:#333;font-family:sans-serif;padding:20px;text-align:center}
+    .box{background:white;padding:30px;border-radius:20px;max-width:400px;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px}
+    button{width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
+    </style></head><body>
+    <div class="box">
+        <h2>KYC Verification</h2>
+        <p style="color:#666">Upload your ID or Passport to verify your account.</p>
+        <form action="/submit-kyc" method="POST">
+            <label style="display:block;text-align:left;font-size:12px;color:#888">Document Type</label>
+            <select style="width:100%;padding:10px;margin-bottom:10px"><option>Passport</option><option>National ID</option></select>
+            <div style="border:2px dashed #ccc;padding:30px;margin-bottom:20px;color:#999">Click to Upload Image</div>
+            <button>SUBMIT DOCUMENTS</button>
+        </form>
+        <a href="/settings" style="display:block;margin-top:20px;color:#666;text-decoration:none">Cancel</a>
+    </div></body></html>`);
+});
+
+app.post('/submit-kyc', (req, res) => {
+    const u = findUser(req.session.userId);
+    u.kycStatus = "Pending"; // Simulate submission
+    res.redirect('/settings');
 });
 
 app.post('/close-account', (req, res) => {
+    // In a real app, delete from DB. Here, we just log them out and remove from array.
+    const idx = users.findIndex(u => u.id === req.session.userId);
+    if (idx !== -1) users.splice(idx, 1);
     req.session.destroy();
     res.redirect('/');
 });
