@@ -35,8 +35,8 @@ const users = [
         passcode: "1111", 
         name: "Demo User",
         phone: "+1 555 0199",
-        address: "Maputo, Mozambique",
-        kycStatus: "Verified", // Unverified, Pending, Verified
+        address: "Maputo, Mozambique", 
+        kycStatus: "Verified",
         
         balance: 0, 
         lockedCapital: 1000, 
@@ -60,12 +60,12 @@ const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === 
 // Login Page
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:#f4f6f8;color:#333;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.3);color:#333}
     input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
     button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:#000}
-    a{color:#f0b90b;text-decoration:none;font-size:12px;margin-top:15px;display:block;font-weight:bold}
-    </style></head><body><div class="box"><h2 style="color:#f0b90b">BlezzyPay</h2>
+    a{color:#ad1457;text-decoration:none;font-size:12px;margin-top:15px;display:block;font-weight:bold}
+    </style></head><body><div class="box"><h2 style="color:#ad1457">BlezzyPay</h2>
     <form action="/login" method="POST">
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="passcode" placeholder="Passcode" required>
@@ -78,8 +78,8 @@ app.get('/', (req, res) => {
 // Sign Up Page
 app.get('/signup', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:#f4f6f8;color:#333;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.3);color:#333}
     input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
     button{width:100%;padding:15px;background:#333;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:white}
     a{color:#666;text-decoration:none;font-size:12px;margin-top:15px;display:block}
@@ -88,6 +88,7 @@ app.get('/signup', (req, res) => {
         <input type="text" name="name" placeholder="Full Name" required>
         <input type="email" name="email" placeholder="Email" required>
         <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="text" name="address" placeholder="Home Address (City, Country)" required>
         <input type="password" name="passcode" placeholder="Create Passcode" required>
         <button>REGISTER</button>
     </form>
@@ -96,14 +97,13 @@ app.get('/signup', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    const { name, email, phone, passcode } = req.body;
+    const { name, email, phone, address, passcode } = req.body;
     if (findUserByEmail(email)) return res.send("Email already exists. <a href='/signup'>Try Again</a>");
     
-    // Create new user
+    // Create new user with Address
     const newUser = {
         id: Date.now().toString(),
-        email, passcode, name, phone,
-        address: "Not Set",
+        email, passcode, name, phone, address, 
         kycStatus: "Unverified",
         balance: 0, lockedCapital: 0, lockedProfit: 0, agtTokens: 0,
         isAdmin: false, transactions: [], pendingDeposit: null
@@ -125,7 +125,7 @@ app.post('/login', (req, res) => {
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const u = findUser(req.session.userId);
-    if (!u) return res.redirect('/'); // Handle deleted user
+    if (!u) return res.redirect('/');
     if (u.isAdmin) return res.redirect('/admin');
 
     const logos = partners.map(p => `<a href="${p.link}" target="_blank"><img src="${p.img}" title="${p.name}" class="logo"></a>`).join('');
@@ -133,46 +133,46 @@ app.get('/dashboard', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{background:#f4f6f8;color:#333;font-family:sans-serif;margin:0;padding-bottom:100px}
-        .tick{background:#1c2026;color:white;padding:10px;border-bottom:1px solid #ddd;white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
+        body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;margin:0;padding-bottom:100px}
+        .tick{background:rgba(0,0,0,0.3);color:white;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1);white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
         .con{padding:20px;max-width:480px;margin:0 auto}
-        .card{background:linear-gradient(135deg, #ffffff, #f9f9f9);padding:25px;border-radius:20px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,0.05);border:1px solid #eee}
+        .card{background:white;color:#333;padding:25px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:none}
         .btn{width:48%;padding:15px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
         .btn-y{background:#f0b90b;color:#000} .btn-g{background:#fff;color:#333;border:1px solid #ddd}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
-        .stat{background:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+        .stat{background:white;color:#333;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
         
-        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee; text-align:center;}
-        .logo{height:45px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} 
+        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:none; text-align:center;}
+        .logo{height:45px;margin:0 25px;opacity:0.9;vertical-align:middle;transition:0.3s} 
         .logo:hover{opacity:1;transform:scale(1.1)}
 
-        .tx-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
-        .m-con{background:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
+        .tx-item{background:white;color:#333;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+        .m-con{background:white;color:#333;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.2)}
         input,select{width:100%;padding:15px;background:#f9f9f9;border:1px solid #ddd;color:#333;margin:10px 0;border-radius:8px;box-sizing:border-box}
         .top-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-        .set-btn{color:#666;font-size:20px;text-decoration:none}
-        .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:#ddd; color:#555; vertical-align:middle;}
-        .verified{background:#e8f5e9; color:#2e7d32;}
+        .set-btn{color:white;font-size:20px;text-decoration:none}
+        .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:rgba(255,255,255,0.2); color:white; vertical-align:middle; border:1px solid rgba(255,255,255,0.4)}
+        .verified{background:#00c853; border-color:#00c853; font-weight:bold}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
         <div class="top-nav">
             <div>
-                <h3>Hi ${u.name.split(' ')[0]} 
+                <h3 style="margin:0">Hi ${u.name.split(' ')[0]} 
                     <span class="kyc-badge ${u.kycStatus === 'Verified' ? 'verified' : ''}">${u.kycStatus}</span>
                 </h3>
-                <p style="margin:0;font-size:12px;color:#888">BlezzyPay Premier</p>
+                <p style="margin:5px 0 0 0;font-size:12px;color:rgba(255,255,255,0.7)">BlezzyPay Premier</p>
             </div>
             <div>
                 <a href="/settings" class="set-btn" style="margin-right:15px"><i class="fa-solid fa-gear"></i></a>
-                <a href="/logout" style="color:red;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
+                <a href="/logout" style="color:white;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
             </div>
         </div>
 
-        ${u.pendingDeposit ? `<div style="background:#fff3cd;padding:15px;border-radius:10px;margin-bottom:20px;color:#856404;border:1px solid #ffeeba"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:#856404;font-weight:bold">PAY NOW</a></div>` : ''}
+        ${u.pendingDeposit ? `<div style="background:rgba(255,255,255,0.9);padding:15px;border-radius:10px;margin-bottom:20px;color:#856404;border:1px solid #ffeeba"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:#856404;font-weight:bold">PAY NOW</a></div>` : ''}
         
-        <div class="card" style="background:#fff;border:1px solid #e0e0e0">
+        <div class="card">
             <div style="color:#666;font-size:12px">Total Assets</div>
             <div style="font-size:32px;font-weight:bold;color:#333">$${(u.balance+u.lockedCapital+u.lockedProfit).toFixed(2)}</div>
             <div class="row" style="margin-top:20px;border-top:1px solid #eee;padding-top:10px">
@@ -192,11 +192,11 @@ app.get('/dashboard', (req, res) => {
         </div>
 
         <h3>History</h3>
-        ${u.transactions.length === 0 ? '<p style="color:#999;font-size:12px">No transactions yet.</p>' : ''}
+        ${u.transactions.length === 0 ? '<p style="color:rgba(255,255,255,0.6);font-size:12px">No transactions yet.</p>' : ''}
         ${u.transactions.slice().reverse().map(t => `<div class="tx-item"><div><b>${t.type}</b><br><small style="color:#666">${t.details||t.date}</small></div><b>$${t.amount}</b></div>`).join('')}
     </div>
 
-    <div style="text-align:center;font-size:10px;color:#999;text-transform:uppercase;font-weight:bold;background:white;padding-top:20px;">Trusted Partners</div>
+    <div style="text-align:center;font-size:10px;color:#666;text-transform:uppercase;font-weight:bold;background:white;padding-top:20px;margin-top:20px;border-radius:20px 20px 0 0">Trusted Partners</div>
     <div class="logo-wrap">
         ${logos}
     </div>
@@ -231,23 +231,23 @@ app.get('/settings', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{background:#f4f6f8;color:#333;font-family:sans-serif;margin:0;padding:20px}
+        body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;margin:0;padding:20px}
         .con{max-width:480px;margin:0 auto}
-        .card{background:white;padding:25px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.05);margin-bottom:20px}
+        .card{background:white;color:#333;padding:25px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.2);margin-bottom:20px}
         .label{font-size:12px;color:#888;margin-bottom:5px;display:block}
         .val{font-size:16px;font-weight:bold;margin-bottom:15px;display:block;border-bottom:1px solid #eee;padding-bottom:10px}
         .btn-close{width:100%;padding:15px;background:#ffebee;color:#d32f2f;border:none;font-weight:bold;border-radius:12px;cursor:pointer}
         .btn-kyc{width:100%;padding:15px;background:#2c333e;color:white;border:none;font-weight:bold;border-radius:12px;cursor:pointer;margin-bottom:10px}
     </style></head><body>
     <div class="con">
-        <a href="/dashboard" style="color:#333;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        <a href="/dashboard" style="color:white;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back</a>
         <h2 style="margin-bottom:20px">Client Settings</h2>
         
         <div class="card">
             <span class="label">Full Name</span><span class="val">${u.name}</span>
             <span class="label">Email Address</span><span class="val">${u.email}</span>
             <span class="label">Phone Number</span><span class="val">${u.phone}</span>
-            <span class="label">Address</span><span class="val">${u.address}</span>
+            <span class="label">Home Address</span><span class="val">${u.address}</span> 
             
             <span class="label">KYC Status</span>
             <span class="val" style="color:${u.kycStatus==='Verified'?'green':'orange'}">${u.kycStatus}</span>
@@ -263,8 +263,8 @@ app.get('/settings', (req, res) => {
 
 app.get('/kyc-page', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:#f4f6f8;color:#333;font-family:sans-serif;padding:20px;text-align:center}
-    .box{background:white;padding:30px;border-radius:20px;max-width:400px;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;padding:20px;text-align:center}
+    .box{background:white;color:#333;padding:30px;border-radius:20px;max-width:400px;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
     input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px}
     button{width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
     </style></head><body>
@@ -283,12 +283,11 @@ app.get('/kyc-page', (req, res) => {
 
 app.post('/submit-kyc', (req, res) => {
     const u = findUser(req.session.userId);
-    u.kycStatus = "Pending"; // Simulate submission
+    u.kycStatus = "Pending"; 
     res.redirect('/settings');
 });
 
 app.post('/close-account', (req, res) => {
-    // In a real app, delete from DB. Here, we just log them out and remove from array.
     const idx = users.findIndex(u => u.id === req.session.userId);
     if (idx !== -1) users.splice(idx, 1);
     req.session.destroy();
@@ -305,12 +304,12 @@ app.post('/dep', (req, res) => {
 app.get('/pay-now', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u.pendingDeposit) return res.redirect('/dashboard');
-    res.send(`<body style="background:#f4f6f8;color:#333;font-family:sans-serif;padding:20px;text-align:center">
-    <h1 style="color:#f0b90b">$${u.pendingDeposit.amount}</h1>
-    <div style="background:white;padding:20px;margin:10px 0;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.05)">
+    res.send(`<body style="background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;padding:20px;text-align:center">
+    <h1 style="color:#fff">$${u.pendingDeposit.amount}</h1>
+    <div style="background:white;color:#333;padding:20px;margin:10px auto;max-width:400px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
     <b>US:</b> Bank of America | 026009593<br><br><b>EU:</b> Barclay | GB33BARC20658259151311<br><br><b>Bitcoin:</b> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
     </div>
-    <form action="/sent" method="POST"><button style="padding:15px;width:100%;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px">I SENT PAYMENT</button></form>
+    <form action="/sent" method="POST"><button style="padding:15px;width:100%;max-width:400px;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px;margin-top:10px">I SENT PAYMENT</button></form>
     </body>`);
 });
 
@@ -332,12 +331,12 @@ app.get('/admin', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u || !u.isAdmin) return res.redirect('/');
     const pending = users.filter(x => x.pendingDeposit && x.pendingDeposit.status === "Pending");
-    res.send(`<body style="background:#eee;padding:20px;font-family:sans-serif">
+    res.send(`<body style="background:#ad1457;color:white;padding:20px;font-family:sans-serif">
     <h1>Admin</h1>
-    <form action="/release" method="POST"><button style="padding:10px;background:black;color:#f0b90b;font-weight:bold;cursor:pointer">⚡ PROCESS 30-DAY PAYOUTS</button></form>
-    <hr>
-    ${pending.map(x => `<div><b>${x.email}</b> claims $${x.pendingDeposit.amount} 
-    <form action="/confirm" method="POST" style="display:inline"><input type="hidden" name="uid" value="${x.id}"><button>CONFIRM</button></form></div>`).join('')}
+    <form action="/release" method="POST"><button style="padding:10px;background:white;color:#ad1457;font-weight:bold;cursor:pointer">⚡ PROCESS 30-DAY PAYOUTS</button></form>
+    <hr style="border-color:rgba(255,255,255,0.2)">
+    ${pending.map(x => `<div style="background:rgba(255,255,255,0.1);padding:10px;margin-bottom:5px"><b>${x.email}</b> claims $${x.pendingDeposit.amount} 
+    <form action="/confirm" method="POST" style="display:inline"><input type="hidden" name="uid" value="${x.id}"><button style="color:black">CONFIRM</button></form></div>`).join('')}
     </body>`);
 });
 
