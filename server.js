@@ -1,4 +1,10 @@
-// 1. Define the Referral Schema
+// 1. IMPORT EVERYTHING FIRST
+const express = require('express');
+const mongoose = require('mongoose'); // <--- THIS LINE MUST BE HERE
+const path = require('path');
+const app = express();
+
+// 2. NOW DEFINE YOUR SCHEMAS
 const referralSchema = new mongoose.Schema({
     code: { type: String, required: true, unique: true },
     ownerName: String,
@@ -8,20 +14,6 @@ const referralSchema = new mongoose.Schema({
 
 const Referral = mongoose.model('Referral', referralSchema);
 
-// 2. Create the API Route to check codes
-app.post('/api/verify-referral', async (req, res) => {
-    const { code } = req.body;
-    try {
-        const validCode = await Referral.findOne({ code: code, active: true });
-        if (validCode) {
-            // Increase use count
-            validCode.uses += 1;
-            await validCode.save();
-            res.json({ success: true, message: "Access Granted" });
-        } else {
-            res.json({ success: false, message: "Invalid or Expired Code" });
-        }
-    } catch (err) {
-        res.status(500).json({ success: false, error: "Server Error" });
-    }
-});
+// 3. DATABASE CONNECTION & REST OF CODE...
+const mongoURI = process.env.MONGODB_URI;
+// ... (rest of your code)
