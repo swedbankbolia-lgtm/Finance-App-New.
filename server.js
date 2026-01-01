@@ -1,48 +1,24 @@
 const express = require('express');
 const session = require('express-session');
+const fs = require('fs'); // File System module to save data
 const app = express();
 
 // --- CONFIGURATION ---
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'blezzy_key_99', resave: false, saveUninitialized: true }));
 
-// --- PARTNERS (Strictly Citi & Morgan Stanley) ---
-const partners = [
-    { 
-        name: "Citi", 
-        link: "https://www.citigroup.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" 
-    },
-    { 
-        name: "Morgan Stanley", 
-        link: "https://www.morganstanley.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" 
-    }
-];
+// --- FILE STORAGE SETUP ---
+const DATA_FILE = 'database.json';
 
-// --- DATABASE (In-Memory) ---
-const users = [
+// Default Data (Used only if no file exists)
+let users = [
     { 
-        id: "admin", 
-        email: "emmanuel.iyere84@gmail.com", 
-        passcode: "1234", 
-        isAdmin: true, 
-        transactions: [] 
+        id: "admin", email: "emmanuel.iyere84@gmail.com", passcode: "1234", isAdmin: true, transactions: [] 
     },
     { 
-        id: "user1", 
-        email: "user@test.com", 
-        passcode: "1111", 
-        name: "Demo User", 
-        phone: "+1 555 0199", 
-        address: "Maputo, Mozambique", 
-        kycStatus: "Verified",
-        
-        balance: 0, 
-        lockedCapital: 1000, 
-        lockedProfit: 200, 
-        maturityDate: "2/1/2026", 
-        agtTokens: 1000, 
+        id: "user1", email: "user@test.com", passcode: "1111", 
+        name: "Demo User", phone: "+1 555 0199", address: "Maputo, Mozambique", kycStatus: "Verified",
+        balance: 0, lockedCapital: 1000, lockedProfit: 200, maturityDate: "2/1/2026", agtTokens: 1000, 
         isAdmin: false, 
         transactions: [
             { type: "Deposit", amount: 1000, date: "1/1/2026", details: "Capital Locked Forever" }, 
@@ -52,12 +28,36 @@ const users = [
     }
 ];
 
+// --- DATA FUNCTIONS ---
+function loadData() {
+    if (fs.existsSync(DATA_FILE)) {
+        const data = fs.readFileSync(DATA_FILE);
+        users = JSON.parse(data);
+        console.log("✅ Database Loaded");
+    } else {
+        saveData(); // Create file if missing
+        console.log("🆕 New Database Created");
+    }
+}
+
+function saveData() {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+}
+
+// Load data immediately on start
+loadData();
+
+// --- PARTNERS ---
+const partners = [
+    { name: "Citi", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
+    { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" }
+];
+
 const findUser = (id) => users.find(u => u.id === id);
 const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === e.trim().toLowerCase());
 
 // --- ROUTES: AUTHENTICATION ---
 
-// Login Page
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
@@ -75,7 +75,6 @@ app.get('/', (req, res) => {
     </div></body></html>`);
 });
 
-// Sign Up Page
 app.get('/signup', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
@@ -99,14 +98,15 @@ app.get('/signup', (req, res) => {
 app.post('/register', (req, res) => {
     const { name, email, phone, address, passcode } = req.body;
     if (findUserByEmail(email)) return res.send("Email already exists. <a href='/signup'>Try Again</a>");
-    const newUser = {
+    
+    users.push({
         id: Date.now().toString(),
         email, passcode, name, phone, address, 
         kycStatus: "Unverified",
         balance: 0, lockedCapital: 0, lockedProfit: 0, agtTokens: 0,
         isAdmin: false, transactions: [], pendingDeposit: null
-    };
-    users.push(newUser);
+    });
+    saveData(); // SAVE NEW USER
     res.redirect('/');
 });
 
@@ -153,7 +153,6 @@ app.get('/dashboard', (req, res) => {
         .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:#333; color:#aaa; vertical-align:middle;}
         .verified{background:rgba(0, 200, 83, 0.2); color:#00c853; font-weight:bold}
 
-        /* CONTACT FLOAT */
         .float-btn{position:fixed;bottom:20px;right:20px;background:#f0b90b;color:black;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 5px 20px rgba(240, 185, 11, 0.4);cursor:pointer;z-index:999;}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
@@ -263,12 +262,21 @@ app.get('/kyc-page', (req, res) => {
     </body>`);
 });
 
-app.post('/submit-kyc', (req, res) => { findUser(req.session.userId).kycStatus = "Pending"; res.redirect('/settings'); });
-app.post('/close-account', (req, res) => { users.splice(users.findIndex(u=>u.id===req.session.userId),1); req.session.destroy(); res.redirect('/'); });
+app.post('/submit-kyc', (req, res) => { 
+    findUser(req.session.userId).kycStatus = "Pending"; 
+    saveData(); 
+    res.redirect('/settings'); 
+});
+
+app.post('/close-account', (req, res) => { 
+    users.splice(users.findIndex(u=>u.id===req.session.userId),1); 
+    saveData(); 
+    req.session.destroy(); 
+    res.redirect('/'); 
+});
 
 // --- CONTACT ---
 app.post('/contact', (req, res) => {
-    // In a real app, this would send an actual email via SMTP
     console.log(`[EMAIL] From: ${req.session.userId} | Subject: ${req.body.subject} | Msg: ${req.body.message}`);
     res.redirect('/dashboard');
 });
@@ -277,6 +285,7 @@ app.post('/contact', (req, res) => {
 app.post('/dep', (req, res) => {
     const u = findUser(req.session.userId);
     u.pendingDeposit = { amount: parseFloat(req.body.amount), status: "Wait", date: new Date() };
+    saveData();
     res.redirect('/pay-now');
 });
 
@@ -326,7 +335,7 @@ app.get('/pay-now', (req, res) => {
     </body>`);
 });
 
-app.post('/sent', (req, res) => { findUser(req.session.userId).pendingDeposit.status = "Pending"; res.redirect('/dashboard'); });
+app.post('/sent', (req, res) => { findUser(req.session.userId).pendingDeposit.status = "Pending"; saveData(); res.redirect('/dashboard'); });
 
 app.post('/with', (req, res) => {
     const u = findUser(req.session.userId);
@@ -335,6 +344,7 @@ app.post('/with', (req, res) => {
     if (amt > 0 && u.balance >= amt) {
         u.balance -= amt;
         u.transactions.push({ type: req.body.type === 'inst' ? "Instant Withdraw" : "Standard Withdraw", amount: -amt, details: `Fee: $${fee} | Net: $${amt-fee}` });
+        saveData();
     }
     res.redirect('/dashboard');
 });
@@ -365,6 +375,7 @@ app.post('/confirm', (req, res) => {
         u.lockedProfit += (amt * 0.20); // 20% Profit sits in Pending
         u.transactions.push({ type: "Deposit", amount: amt, details: "Capital Locked Forever" });
         u.pendingDeposit = null;
+        saveData();
     }
     res.redirect('/admin');
 });
@@ -378,6 +389,7 @@ app.post('/release', (req, res) => {
             u.transactions.push({ type: "Maturity Payout", amount: pay, details: "Yield Moved to Cash" });
         }
     });
+    saveData();
     res.redirect('/admin');
 });
 
