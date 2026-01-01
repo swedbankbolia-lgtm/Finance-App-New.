@@ -24,14 +24,17 @@ const users = [
         id: "user_1",
         email: "user@test.com",
         passcode: "1111",
-        balance: 120, // Starting balance from your example
+        
+        // BALANCES
+        balance: 0,          
+        lockedCapital: 100,  
+        accumulatedYield: 20,
         agtTokens: 100,
-        lockedBonus: 20,
-        bonusUnlockDate: new Date("2026-02-01"),
+        
         isAdmin: false,
         transactions: [
-            { type: "Deposit", amount: 100, date: "1/1/2026" },
-            { type: "20% Bonus", amount: 20, date: "1/1/2026" }
+            { type: "Smart Vault Deposit", amount: 100, date: "1/1/2026" },
+            { type: "Monthly Yield (20%)", amount: 20, date: "1/1/2026" }
         ],
         pendingDeposit: null
     }
@@ -41,7 +44,7 @@ const users = [
 const findUser = (id) => users.find(u => u.id === id);
 const findUserByEmail = (email) => users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
 
-// --- 3. AUTH ROUTES ---
+// --- 3. LOGIN PAGE ---
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html><html><head><title>Login</title><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -66,13 +69,13 @@ app.post('/login', (req, res) => {
     res.send(`Invalid Credentials. <a href='/'>Try Again</a>`);
 });
 
-// --- 4. MODERN DASHBOARD ---
+// --- 4. DASHBOARD ---
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
     if (user.isAdmin) return res.redirect('/admin');
 
-    let bonusStatus = user.bonusUnlockDate && new Date() >= user.bonusUnlockDate ? "Unlocked" : "Locked (30 Days)";
+    const totalPortfolio = user.balance + user.lockedCapital + user.accumulatedYield;
 
     res.send(`
         <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -80,74 +83,70 @@ app.get('/dashboard', (req, res) => {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-            :root { --primary: #f0b90b; --bg: #0f1216; --card: #1c2026; --text-muted: #888; }
-            body{background:var(--bg);color:white;font-family:'Inter',sans-serif;margin:0;padding-bottom:100px}
+            :root { --primary: #f0b90b; --bg: #0f1216; --card: #1c2026; }
+            body{background:var(--bg);color:white;font-family:'Inter',sans-serif;margin:0;padding-bottom:50px}
             
-            /* Ticker & Logos */
+            /* Ticker */
             .ticker-wrap{width:100%;overflow:hidden;background:#16191f;border-bottom:1px solid #222;padding:10px 0}
             .ticker{display:flex;white-space:nowrap;animation:ticker 30s linear infinite}
             .ticker-item{padding:0 30px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
             .up{color:#00c853} .down{color:#ff3d00}
             @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
-            
-            .partners-strip { background: #000; padding: 15px 0; overflow: hidden; border-bottom:1px solid #222; }
-            .logo-slider { display: flex; width: 200%; animation: scroll 40s linear infinite; align-items: center; }
-            .logo-track { display: flex; align-items: center; justify-content: space-around; width: 50%; }
-            .partner-logo { height: 24px; margin: 0 25px; opacity: 0.5; filter: grayscale(100%); transition: 0.3s; }
-            .partner-logo:hover { opacity: 1; filter: grayscale(0%); }
-            @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-            /* Main Layout */
-            .container { padding: 24px; max-width: 480px; margin: 0 auto; }
+            /* Layout */
+            .container { padding: 24px; max-width: 480px; margin: 0 auto; min-height: 80vh; }
             .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-            .user-info h1 { margin: 0; font-size: 20px; }
-            .user-info p { margin: 0; font-size: 12px; color: var(--text-muted); }
             .logout-btn { color: #ff4757; text-decoration: none; font-size: 13px; font-weight: 600; background: rgba(255, 71, 87, 0.1); padding: 8px 16px; border-radius: 20px; }
 
-            /* Portfolio Card */
+            /* Portfolio */
             .portfolio-card { background: linear-gradient(135deg, #2b323b 0%, #1c2026 100%); border-radius: 24px; padding: 25px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); }
             .portfolio-label { font-size: 13px; color: #aaa; margin-bottom: 5px; }
             .portfolio-value { font-size: 38px; font-weight: 700; color: #fff; letter-spacing: -1px; }
             .agt-tag { position: absolute; top: 25px; right: 25px; background: rgba(240, 185, 11, 0.2); color: var(--primary); padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; }
 
-            /* Action Buttons */
+            /* Actions */
             .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
             .btn-action { border: none; padding: 18px; border-radius: 18px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
             .btn-deposit { background: var(--primary); color: #000; box-shadow: 0 4px 15px rgba(240, 185, 11, 0.3); }
             .btn-withdraw { background: #2c333e; color: #fff; border: 1px solid #3a424e; }
-            .btn-withdraw:hover { background: #3a424e; }
 
-            /* Bonus Card */
-            .bonus-card { background: rgba(0, 200, 83, 0.1); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-            .bonus-info div:first-child { color: #00c853; font-weight: 700; font-size: 18px; }
-            .bonus-info div:last-child { color: #888; font-size: 12px; margin-top: 2px; }
-            .status-badge { background: #00c853; color: #000; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+            /* Stats Grid */
+            .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+            .stat-card { background: #1c2026; padding: 15px; border-radius: 16px; border: 1px solid #333; }
+            .stat-label { font-size: 11px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+            .stat-val { font-size: 18px; font-weight: 700; color: #fff; }
+            .green-text { color: #00c853; }
 
             /* History */
-            .section-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; }
             .tx-list { display: flex; flex-direction: column; gap: 12px; }
             .tx-item { display: flex; justify-content: space-between; align-items: center; background: #181b21; padding: 16px; border-radius: 16px; }
-            .tx-left { display: flex; gap: 12px; align-items: center; }
-            .tx-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+            .tx-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 12px; }
             .icon-dep { background: rgba(0, 200, 83, 0.15); color: #00c853; }
+            .icon-lock { background: rgba(240, 185, 11, 0.15); color: var(--primary); }
             .icon-with { background: rgba(255, 61, 0, 0.15); color: #ff3d00; }
-            .icon-bonus { background: rgba(240, 185, 11, 0.15); color: var(--primary); }
             .tx-details div:first-child { font-weight: 600; font-size: 14px; }
             .tx-details div:last-child { font-size: 11px; color: #666; margin-top: 2px; }
-            .tx-amount { font-weight: 700; font-size: 14px; }
-            .pos { color: #00c853; } .neg { color: #fff; }
 
-            /* Modal */
+            /* Footer Partners */
+            .footer-partners { margin-top: 50px; padding-top: 20px; border-top: 1px solid #222; overflow: hidden; }
+            .fp-header { text-align: center; color: #444; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; font-weight: 600; }
+            .logo-slider { display: flex; width: 200%; animation: scroll 45s linear infinite; }
+            .logo-track { display: flex; align-items: center; justify-content: space-around; width: 50%; }
+            .partner-item { text-decoration: none; display: flex; align-items: center; }
+            .partner-logo { height: 35px; margin: 0 30px; opacity: 0.5; filter: grayscale(100%) brightness(1.5); transition: 0.3s; }
+            .partner-logo:hover { opacity: 1; filter: grayscale(0%) brightness(1); transform: scale(1.1); }
+            .text-logo { font-size: 11px; color: #777; font-weight: bold; margin: 0 20px; text-decoration: none; white-space: nowrap; border: 1px solid #333; padding: 5px 10px; border-radius: 5px; transition: 0.3s; }
+            .text-logo:hover { color: #fff; border-color: #777; }
+            
+            @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+            /* Modals & Float */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
             .modal-content { background: #1c2026; width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 30px; animation: slideUp 0.3s ease; }
             @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-            .modal h2 { margin-top: 0; font-size: 20px; }
-            .inp-group { margin-bottom: 15px; }
-            .inp-group label { display: block; font-size: 12px; color: #888; margin-bottom: 8px; }
-            .inp-field { width: 100%; padding: 16px; background: #0f1216; border: 1px solid #333; color: white; border-radius: 12px; font-size: 16px; outline: none; }
+            .inp-field { width: 100%; padding: 16px; background: #0f1216; border: 1px solid #333; color: white; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 15px; }
             .btn-full { width: 100%; padding: 18px; background: var(--primary); color: black; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; font-size: 16px; }
-            .close-modal { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #888; cursor: pointer; }
-
+            .close-modal { float:right; font-size: 24px; cursor: pointer; color: #666; }
             .wa-float { position: fixed; bottom: 25px; right: 25px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-decoration: none; z-index: 100; transition: transform 0.2s;}
             .wa-float:hover { transform: scale(1.1); }
         </style></head><body>
@@ -156,101 +155,122 @@ app.get('/dashboard', (req, res) => {
             <div class="ticker-item">BTC <span class="up">$98,420</span></div>
             <div class="ticker-item">ETH <span class="down">$3,150</span></div>
             <div class="ticker-item">XRP <span class="up">$1.12</span></div>
-            <div class="ticker-item">SOL <span class="up">$145.20</span></div>
             <div class="ticker-item">USDT <span class="up">$1.00</span></div>
             <div class="ticker-item">BTC <span class="up">$98,420</span></div>
             <div class="ticker-item">ETH <span class="down">$3,150</span></div>
-            <div class="ticker-item">XRP <span class="up">$1.12</span></div>
-        </div></div>
-
-        <div class="partners-strip"><div class="logo-slider">
-            <div class="logo-track">
-                <img src="https://logo.clearbit.com/goldmansachs.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/jpmorganchase.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/bnymellon.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/coinbase.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/revolut.com" class="partner-logo">
-                <span style="font-size:10px; color:#555; font-weight:bold; margin:0 15px;">BANCO MOZ</span>
-            </div>
-            <div class="logo-track">
-                <img src="https://logo.clearbit.com/goldmansachs.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/jpmorganchase.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/bnymellon.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/coinbase.com" class="partner-logo">
-                <img src="https://logo.clearbit.com/revolut.com" class="partner-logo">
-                <span style="font-size:10px; color:#555; font-weight:bold; margin:0 15px;">BANCO MOZ</span>
-            </div>
         </div></div>
 
         <div class="container">
             <div class="header">
-                <div class="user-info">
-                    <h1>Hello, User</h1>
-                    <p>Welcome back</p>
-                </div>
+                <div><h1 style="margin:0;font-size:20px">Hello, User</h1><p style="margin:0;font-size:12px;color:#888">BlezzyPay Premier</p></div>
                 <a href="/logout" class="logout-btn"><i class="fa-solid fa-power-off"></i> Logout</a>
             </div>
 
             ${user.pendingDeposit ? `<div style="background:#e67e22;padding:15px;border-radius:16px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;">
-                <div style="font-size:13px;font-weight:600">Pending Deposit: $${user.pendingDeposit.amount}</div>
-                <a href="/pay-now" style="background:white;color:#e67e22;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:bold">PAY NOW</a>
+                <div style="font-size:13px;font-weight:600">Pending: $${user.pendingDeposit.amount}</div>
+                <a href="/pay-now" style="background:white;color:#e67e22;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:bold">PAY</a>
             </div>` : ''}
 
             <div class="portfolio-card">
-                <div class="portfolio-label">Total Portfolio Value</div>
-                <div class="portfolio-value">$${(user.balance + user.lockedBonus).toFixed(2)}</div>
+                <div class="portfolio-label">Total Asset Value</div>
+                <div class="portfolio-value">$${totalPortfolio.toFixed(2)}</div>
                 <div class="agt-tag"><i class="fa-solid fa-coins"></i> ${user.agtTokens} AGT</div>
             </div>
 
             <div class="actions">
-                <button class="btn-action btn-deposit" onclick="openModal('deposit')">
-                    <i class="fa-solid fa-arrow-down"></i> DEPOSIT
-                </button>
-                <button class="btn-action btn-withdraw" onclick="openModal('withdraw')">
-                    <i class="fa-solid fa-paper-plane"></i> WITHDRAW
-                </button>
+                <button class="btn-action btn-deposit" onclick="openModal('deposit')"><i class="fa-solid fa-arrow-down"></i> DEPOSIT</button>
+                <button class="btn-action btn-withdraw" onclick="openModal('withdraw')"><i class="fa-solid fa-paper-plane"></i> WITHDRAW</button>
             </div>
 
-            <div class="bonus-card">
-                <div class="bonus-info">
-                    <div>$${user.lockedBonus.toFixed(2)}</div>
-                    <div>Locked Bonus (20%)</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fa-solid fa-lock"></i> Locked Capital</div>
+                    <div class="stat-val">$${user.lockedCapital.toFixed(2)}</div>
                 </div>
-                <div class="status-badge">${bonusStatus}</div>
+                <div class="stat-card">
+                    <div class="stat-label"><i class="fa-solid fa-chart-line"></i> Yield (20%)</div>
+                    <div class="stat-val green-text">+$${user.accumulatedYield.toFixed(2)}</div>
+                </div>
             </div>
 
-            <div class="section-title">Recent Activity</div>
+            <div class="section-title">Smart History</div>
             <div class="tx-list">
                 ${user.transactions.slice().reverse().map(t => {
-                    let icon = "icon-dep"; let fa = "fa-arrow-down"; let sign = "+"; let col = "pos";
-                    if(t.type.includes("Withdraw")) { icon = "icon-with"; fa = "fa-arrow-up"; sign = "-"; col = "neg"; }
-                    if(t.type.includes("Bonus")) { icon = "icon-bonus"; fa = "fa-lock"; }
+                    let icon = "icon-dep"; let fa = "fa-arrow-down"; let col = "green-text";
+                    if(t.type.includes("Withdraw")) { icon = "icon-with"; fa = "fa-arrow-up"; col = "white"; }
+                    if(t.type.includes("Yield") || t.type.includes("Bonus")) { icon = "icon-lock"; fa = "fa-percentage"; }
                     
                     return `
                     <div class="tx-item">
-                        <div class="tx-left">
+                        <div style="display:flex;align-items:center;">
                             <div class="tx-icon ${icon}"><i class="fa-solid ${fa}"></i></div>
-                            <div class="tx-details">
-                                <div>${t.type}</div>
-                                <div>${t.date}</div>
-                            </div>
+                            <div class="tx-details"><div>${t.type}</div><div>${t.date}</div></div>
                         </div>
-                        <div class="tx-amount ${col}">${sign}$${t.amount}</div>
+                        <div class="tx-amount ${col}">+$${t.amount}</div>
                     </div>`;
                 }).join('')}
+            </div>
+
+            <div class="footer-partners">
+                <div class="fp-header">Trusted by Global Leaders</div>
+                <div class="logo-slider">
+                    <div class="logo-track">
+                        <a href="https://www.goldmansachs.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo" title="Goldman Sachs">
+                        </a>
+                        <a href="https://www.jpmorganchase.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo" title="JPMorgan">
+                        </a>
+                        <a href="https://www.bnymellon.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo" title="BNY Mellon">
+                        </a>
+                        <a href="https://www.coinbase.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Coinbase.svg" class="partner-logo" title="Coinbase">
+                        </a>
+                        <a href="https://www.fidelity.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Fidelity_Investments.svg" class="partner-logo" title="Fidelity">
+                        </a>
+                        <a href="https://www.revolut.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo" title="Revolut">
+                        </a>
+                        <a href="https://www.bancomoc.mz" target="_blank" class="text-logo">BANCO DE MOÇAMBIQUE</a>
+                        <a href="#" class="text-logo">ARMONIE BANK SA</a>
+                    </div>
+                    
+                    <div class="logo-track">
+                        <a href="https://www.goldmansachs.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.jpmorganchase.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.bnymellon.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.coinbase.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Coinbase.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.fidelity.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Fidelity_Investments.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.revolut.com" target="_blank" class="partner-item">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo">
+                        </a>
+                        <a href="https://www.bancomoc.mz" target="_blank" class="text-logo">BANCO DE MOÇAMBIQUE</a>
+                        <a href="#" class="text-logo">ARMONIE BANK SA</a>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="depositModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal" onclick="closeModals()">&times;</span>
-                <h2>Deposit Funds</h2>
+                <h2>Deposit to Smart Vault</h2>
+                <p style="font-size:12px;color:#888;margin-bottom:20px">Deposits are locked. You earn 20% monthly yield.</p>
                 <form action="/initiate-deposit" method="POST">
-                    <div class="inp-group">
-                        <label>Amount (USD)</label>
-                        <input type="number" name="amount" class="inp-field" placeholder="e.g. 5000" required>
-                    </div>
-                    <button class="btn-full">PROCEED TO PAYMENT</button>
+                    <input type="number" name="amount" class="inp-field" placeholder="Amount (USD)" required>
+                    <button class="btn-full">PROCEED</button>
                 </form>
             </div>
         </div>
@@ -258,90 +278,66 @@ app.get('/dashboard', (req, res) => {
         <div id="withdrawModal" class="modal">
             <div class="modal-content">
                 <span class="close-modal" onclick="closeModals()">&times;</span>
-                <h2>Withdraw Funds</h2>
+                <h2>Withdraw Profits</h2>
                 <div style="background:#2c333e; padding:15px; border-radius:12px; margin-bottom:20px; font-size:13px; color:#ccc;">
-                    Available Balance: <strong style="color:white">$${user.balance.toFixed(2)}</strong>
+                    Available (Unlocked): <strong style="color:white">$${user.balance.toFixed(2)}</strong>
                 </div>
                 <form action="/withdraw" method="POST">
-                    <div class="inp-group">
-                        <label>Withdraw Amount</label>
-                        <input type="number" name="amount" class="inp-field" placeholder="0.00" required max="${user.balance}">
-                    </div>
-                    <div class="inp-group">
-                        <label>Wallet Address / IBAN</label>
-                        <input type="text" name="destination" class="inp-field" placeholder="Paste address here" required>
-                    </div>
-                    <button class="btn-full" style="background:#fff; color:black">CONFIRM WITHDRAWAL</button>
+                    <input type="number" name="amount" class="inp-field" placeholder="Amount" required max="${user.balance}">
+                    <input type="text" name="destination" class="inp-field" placeholder="Wallet Address" required>
+                    <button class="btn-full" style="background:#fff; color:black">REQUEST WITHDRAWAL</button>
                 </form>
             </div>
         </div>
 
         <a href="https://wa.me/46704406175" class="wa-float" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
-
         <script>
-            function openModal(type) {
-                document.getElementById(type + 'Modal').style.display = 'flex';
-            }
-            function closeModals() {
-                document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            }
-            window.onclick = function(event) {
-                if (event.target.classList.contains('modal')) closeModals();
-            }
+            function openModal(type) { document.getElementById(type + 'Modal').style.display = 'flex'; }
+            function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+            window.onclick = function(e) { if (e.target.classList.contains('modal')) closeModals(); }
         </script>
     </body></html>`);
 });
 
 // --- 5. FUNCTIONAL ROUTES ---
 
-// Deposit
 app.post('/initiate-deposit', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
-    const amount = parseFloat(req.body.amount);
-    user.pendingDeposit = { amount: amount, status: "Waiting", date: new Date() };
+    user.pendingDeposit = { amount: parseFloat(req.body.amount), status: "Waiting", date: new Date() };
     res.redirect('/pay-now');
 });
 
-// Withdraw (New Feature)
 app.post('/withdraw', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
     const amount = parseFloat(req.body.amount);
-    
     if (amount > 0 && user.balance >= amount) {
         user.balance -= amount;
-        user.transactions.push({ type: "Withdrawal (Pending)", amount: amount, date: new Date().toLocaleDateString() });
-        // In a real app, you would save the 'destination' address for admin review
+        user.transactions.push({ type: "Withdrawal Request", amount: amount, date: new Date().toLocaleDateString() });
     }
     res.redirect('/dashboard');
 });
 
-// Pay Page (Refined)
 app.get('/pay-now', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
     if (!user.pendingDeposit) return res.redirect('/dashboard');
-
     res.send(`
         <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>body{background:#0f1216;color:white;font-family:sans-serif;padding:20px}
         .box{background:#1c2026;padding:15px;border-radius:12px;margin-bottom:10px;border:1px solid #333;font-size:14px}
-        .hl{color:#f0b90b;font-weight:bold;display:block;margin-bottom:4px;font-size:12px;text-transform:uppercase;letter-spacing:1px}
-        .val{font-family:monospace;font-size:13px;color:#ddd}
+        .hl{color:#f0b90b;font-weight:bold;display:block;margin-bottom:4px;font-size:12px;text-transform:uppercase}
         h1{color:#f0b90b;text-align:center}</style></head><body>
         <div style="max-width:500px;margin:0 auto">
-            <p style="text-align:center;color:#888;margin:0">Sending Amount</p>
-            <h1>$${user.pendingDeposit.amount}</h1>
-            
-            <div class="box"><span class="hl">US Bank</span><span class="val">Bank of America | 026009593</span></div>
-            <div class="box"><span class="hl">EU Bank</span><span class="val">Barclay | GB33BARC20658259151311 | Ref: infogloirebanco</span></div>
-            <div class="box"><span class="hl">Uganda</span><span class="val">Equity Bank | 1003103498481 | Ref: Annet</span></div>
-            <div class="box"><span class="hl">South Africa</span><span class="val">Capitek | 1882242481 | Ref: BlezzyPay</span></div>
-            <div class="box"><span class="hl">Bitcoin</span><span class="val">bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7</span></div>
-
+            <h1 style="text-align:center">$${user.pendingDeposit.amount}</h1>
+            <div class="box"><span class="hl">US Bank</span>Bank of America | 026009593</div>
+            <div class="box"><span class="hl">EU Bank</span>Barclay | GB33BARC20658259151311 | Ref: infogloirebanco</div>
+            <div class="box"><span class="hl">Uganda</span>Equity Bank | 1003103498481 | Ref: Annet</div>
+            <div class="box"><span class="hl">South Africa</span>Capitek | 1882242481 | Ref: BlezzyPay</div>
+            <div class="box"><span class="hl">Bitcoin</span>bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7</div>
             <form action="/confirm-payment-sent" method="POST">
-                <button style="width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;margin-top:20px">CONFIRM PAYMENT SENT</button>
+                <button style="width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;margin-top:20px">I SENT PAYMENT</button>
             </form>
             <div style="text-align:center;margin-top:20px"><a href="/cancel-deposit" style="color:#ff4757;text-decoration:none">Cancel</a></div>
         </div></body></html>
@@ -359,7 +355,7 @@ app.get('/cancel-deposit', (req, res) => {
     res.redirect('/dashboard');
 });
 
-// --- 6. ADMIN ---
+// --- 6. ADMIN PANEL ---
 app.get('/admin', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const admin = findUser(req.session.userId);
@@ -369,13 +365,23 @@ app.get('/admin', (req, res) => {
     res.send(`
         <body style="font-family:sans-serif;padding:20px;background:#eee">
             <h1>Admin Panel</h1>
+            
+            <div style="margin-bottom:20px; padding:15px; background:white; border-left:5px solid #000;">
+                <h3>Controls</h3>
+                <form action="/admin/trigger-yield" method="POST">
+                    <button style="background:black; color:#f0b90b; padding:10px 20px; border:none; cursor:pointer; font-weight:bold;">⚡ TRIGGER MONTHLY YIELD (20%)</button>
+                    <small style="display:block; margin-top:5px; color:#666;">Clicking this pays 20% to all users based on their Locked Capital.</small>
+                </form>
+            </div>
+
+            <h3>Pending Deposits</h3>
             ${pending.length === 0 ? "No pending deposits." : ""}
             ${pending.map(u => `
                 <div style="background:white;padding:20px;margin-bottom:10px;border-left:5px solid #f0b90b">
                     User: ${u.email} claims <strong>$${u.pendingDeposit.amount}</strong>
                     <form action="/admin/confirm" method="POST" style="margin-top:10px">
                         <input type="hidden" name="uid" value="${u.id}">
-                        <button style="background:green;color:white;padding:10px;cursor:pointer">CONFIRM</button>
+                        <button style="background:green;color:white;border:none;padding:10px">CONFIRM DEPOSIT</button>
                     </form>
                 </div>
             `).join('')}
@@ -390,13 +396,37 @@ app.post('/admin/confirm', (req, res) => {
     const u = findUser(req.body.uid);
     if (u && u.pendingDeposit) {
         const amt = u.pendingDeposit.amount;
-        const bonus = amt * 0.20;
-        u.balance += amt; u.agtTokens += amt; u.lockedBonus += bonus;
-        let unlock = new Date(); unlock.setDate(unlock.getDate() + 30); u.bonusUnlockDate = unlock;
-        u.transactions.push({ type: "Deposit", amount: amt, date: new Date().toLocaleDateString() });
-        u.transactions.push({ type: "20% Bonus", amount: bonus, date: new Date().toLocaleDateString() });
+        // Logic: Deposit goes to LOCKED CAPITAL
+        u.lockedCapital += amt;
+        u.agtTokens += amt;
+        
+        u.transactions.push({ type: "Smart Vault Deposit", amount: amt, date: new Date().toLocaleDateString() });
         u.pendingDeposit = null;
+
+        // Generate PDF Receipt
+        const doc = new PDFDocument();
+        console.log(`Sending Receipt to ${u.email}`);
+        doc.text(`Confirmed Deposit: $${amt} into Smart Vault.`);
+        doc.end();
     }
+    res.redirect('/admin');
+});
+
+// Admin Monthly Trigger
+app.post('/admin/trigger-yield', (req, res) => {
+    const admin = findUser(req.session.userId);
+    if (!admin.isAdmin) return res.redirect('/');
+    
+    users.forEach(u => {
+        if(!u.isAdmin && u.lockedCapital > 0) {
+            const yieldAmt = u.lockedCapital * 0.20;
+            u.accumulatedYield += yieldAmt;
+            // Also add to available balance so they can withdraw the profit if they want? 
+            // Or keep it in accumulated yield? The prompt implied earning it. 
+            // Let's add it to 'accumulatedYield' which adds to Total Portfolio.
+            u.transactions.push({ type: "Monthly Yield (20%)", amount: yieldAmt, date: new Date().toLocaleDateString() });
+        }
+    });
     res.redirect('/admin');
 });
 
