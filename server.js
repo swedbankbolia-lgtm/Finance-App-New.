@@ -8,12 +8,14 @@ app.use(session({ secret: 'blezzy_key_99', resave: false, saveUninitialized: tru
 
 // --- PARTNERS (Direct Wiki Links) ---
 const partners = [
+    { name: "Citi", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
+    { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" },
     { name: "Standard Chartered", link: "https://www.sc.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" },
+    { name: "Swedbank", link: "https://www.swedbank.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/66/Swedbank_logo.svg" },
+    { name: "BBVA", link: "https://www.bbva.com", img: "https://upload.wikimedia.org/wikipedia/commons/e/e3/BBVA_2019.svg" },
     { name: "Bank of America", link: "https://www.bankofamerica.com", img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" },
     { name: "BNY Mellon", link: "https://www.bnymellon.com", img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" },
-    { name: "Citibank", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
     { name: "BNP Paribas", link: "https://mabanque.bnpparibas", img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" },
-    { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" },
     { name: "JPMorgan", link: "https://www.jpmorganchase.com", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" },
     { name: "Goldman Sachs", link: "https://www.goldmansachs.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" },
     { name: "MUFG", link: "https://www.mufg.jp", img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" },
@@ -73,7 +75,7 @@ app.get('/dashboard', (req, res) => {
         
         /* LOGO SECTION - WHITE BACKGROUND */
         .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee}
-        .logo{height:35px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} /* No Filter needed for white BG */
+        .logo{height:35px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} 
         .logo:hover{opacity:1;transform:scale(1.1)}
 
         .tx-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
