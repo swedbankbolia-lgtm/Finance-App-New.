@@ -11,19 +11,19 @@ app.use(session({
     saveUninitialized: true 
 }));
 
-// --- 2. MOCK DATABASE ---
+// --- 2. DATABASE (UPDATED WITH YOUR CREDENTIALS) ---
 const users = [
     {
         id: "admin_1",
-        email: "admin@test.com",
-        passcode: "1234", // ADMIN PASSCODE
-        isAdmin: true,
+        email: "emmanuel.iyere84@gmail.com", // YOUR EMAIL
+        passcode: "Sheilla9611@",            // YOUR PASSWORD
+        isAdmin: true,                       // You have full access
         transactions: []
     },
     {
         id: "user_1",
-        email: "user@test.com",
-        passcode: "1111", // USER PASSCODE
+        email: "user@test.com",              // Test User for you to simulate clients
+        passcode: "1111",
         balance: 0,
         agtTokens: 0,
         lockedBonus: 0,
@@ -65,8 +65,7 @@ app.get('/', (req, res) => {
                     <button type="submit">LOGIN</button>
                 </form>
                 <div class="note">
-                    <strong>User:</strong> user@test.com / 1111 <br>
-                    <strong>Admin:</strong> admin@test.com / 1234
+                    <strong>Admin Access Configured</strong>
                 </div>
             </div>
         </body>
@@ -75,18 +74,24 @@ app.get('/', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
+    // .trim() removes any accidental spaces from copy-pasting
     const email = req.body.email.trim();
     const passcode = req.body.passcode.trim();
+
     const user = findUserByEmail(email);
     
+    // Check credentials
     if (user && user.passcode === passcode) {
         req.session.userId = user.id;
         if(user.isAdmin) return res.redirect('/admin');
         return res.redirect('/dashboard');
     }
+    
+    // Error Message
     res.send(`<body style="background:#0f1216; color:white; text-align:center; padding-top:50px; font-family:sans-serif;">
         <h3>Invalid Credentials</h3>
-        <p>You typed: ${email} / ${passcode}</p>
+        <p>System expected: ${users[0].email}</p>
+        <p>You typed: ${email}</p>
         <a href="/" style="color:#f0b90b;">Try Again</a>
     </body>`);
 });
@@ -312,29 +317,25 @@ app.get('/pay-now', (req, res) => {
                     <div class="pay-row"><span class="pay-label">Bank Name</span> <span class="pay-val">Bank of America</span></div>
                     <div class="pay-row"><span class="pay-label">Account</span> <span class="pay-val">026009593</span></div>
                 </div>
-
                 <div class="pay-card">
                     <div class="pay-title">🇪🇺 EU Account</div>
                     <div class="pay-row"><span class="pay-label">Bank Name</span> <span class="pay-val">Barclay</span></div>
                     <div class="pay-row"><span class="pay-label">Name</span> <span class="pay-val">Hillside (Sports) GP Limited</span></div>
                     <div class="pay-row"><span class="pay-label">Account</span> <span class="pay-val">GB33BARC20658259151311</span></div>
-                    <div class="pay-row"><span class="pay-label">Reference</span> <span class="pay-val" style="color:#f0b90b;">infogloirebanco</span></div>
+                    <div class="pay-row"><span class="pay-label">Ref</span> <span class="pay-val" style="color:#f0b90b;">infogloirebanco</span></div>
                 </div>
-
                 <div class="pay-card">
                     <div class="pay-title">🇺🇬 Uganda</div>
-                    <div class="pay-row"><span class="pay-label">Bank Name</span> <span class="pay-val">Equity Bank</span></div>
+                    <div class="pay-row"><span class="pay-label">Bank</span> <span class="pay-val">Equity Bank</span></div>
                     <div class="pay-row"><span class="pay-label">Account</span> <span class="pay-val">1003103498481</span></div>
-                    <div class="pay-row"><span class="pay-label">Reference</span> <span class="pay-val" style="color:#f0b90b;">Annet</span></div>
+                    <div class="pay-row"><span class="pay-label">Ref</span> <span class="pay-val" style="color:#f0b90b;">Annet</span></div>
                 </div>
-
                 <div class="pay-card">
                     <div class="pay-title">🇿🇦 South Africa</div>
-                    <div class="pay-row"><span class="pay-label">Bank Name</span> <span class="pay-val">Capitek Bank</span></div>
+                    <div class="pay-row"><span class="pay-label">Bank</span> <span class="pay-val">Capitek Bank</span></div>
                     <div class="pay-row"><span class="pay-label">Account</span> <span class="pay-val">1882242481</span></div>
-                    <div class="pay-row"><span class="pay-label">Reference</span> <span class="pay-val" style="color:#f0b90b;">BlezzyPay</span></div>
+                    <div class="pay-row"><span class="pay-label">Ref</span> <span class="pay-val" style="color:#f0b90b;">BlezzyPay</span></div>
                 </div>
-
                 <div class="pay-card">
                     <div class="pay-title"><i class="fa-brands fa-bitcoin"></i> Bitcoin</div>
                     <div style="font-family: monospace; word-break: break-all; background: #000; padding: 10px; border-radius: 5px; border: 1px solid #444;">
