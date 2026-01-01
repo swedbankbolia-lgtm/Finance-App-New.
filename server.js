@@ -11,18 +11,18 @@ app.use(session({
     saveUninitialized: true 
 }));
 
-// --- 2. DATABASE (UPDATED WITH YOUR CREDENTIALS) ---
+// --- 2. DATABASE ---
 const users = [
     {
         id: "admin_1",
-        email: "emmanuel.iyere84@gmail.com", // YOUR EMAIL
-        passcode: "Sheilla9611@",            // YOUR PASSWORD
-        isAdmin: true,                       // You have full access
+        email: "emmanuel.iyere84@gmail.com", 
+        passcode: "1234",                    // <--- RESET TO 1234 FOR EASY ACCESS
+        isAdmin: true,
         transactions: []
     },
     {
         id: "user_1",
-        email: "user@test.com",              // Test User for you to simulate clients
+        email: "user@test.com",
         passcode: "1111",
         balance: 0,
         agtTokens: 0,
@@ -34,9 +34,9 @@ const users = [
     }
 ];
 
-// Helpers
+// Helpers (Now Case-Insensitive)
 const findUser = (id) => users.find(u => u.id === id);
-const findUserByEmail = (email) => users.find(u => u.email === email);
+const findUserByEmail = (email) => users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
 // --- 3. AUTH ROUTES ---
 app.get('/', (req, res) => {
@@ -65,7 +65,7 @@ app.get('/', (req, res) => {
                     <button type="submit">LOGIN</button>
                 </form>
                 <div class="note">
-                    <strong>Admin Access Configured</strong>
+                    <strong>Admin Access Ready</strong>
                 </div>
             </div>
         </body>
@@ -74,10 +74,8 @@ app.get('/', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-    // .trim() removes any accidental spaces from copy-pasting
     const email = req.body.email.trim();
     const passcode = req.body.passcode.trim();
-
     const user = findUserByEmail(email);
     
     // Check credentials
@@ -87,12 +85,13 @@ app.post('/login', (req, res) => {
         return res.redirect('/dashboard');
     }
     
-    // Error Message
+    // Detailed Error for Debugging
     res.send(`<body style="background:#0f1216; color:white; text-align:center; padding-top:50px; font-family:sans-serif;">
-        <h3>Invalid Credentials</h3>
-        <p>System expected: ${users[0].email}</p>
-        <p>You typed: ${email}</p>
-        <a href="/" style="color:#f0b90b;">Try Again</a>
+        <h3 style="color:#f44336;">Access Denied</h3>
+        <p>User Found: ${user ? "YES" : "NO"}</p>
+        <p>Passcode Match: ${user && user.passcode === passcode ? "YES" : "NO"}</p>
+        <br>
+        <a href="/" style="background:#f0b90b; color:black; padding:10px 20px; text-decoration:none; border-radius:5px;">Try Again</a>
     </body>`);
 });
 
@@ -117,16 +116,12 @@ app.get('/dashboard', (req, res) => {
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <style>
                 body { background: #0f1216; color: white; font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 80px; }
-                
-                /* Ticker Styles */
                 .ticker-wrap { width: 100%; overflow: hidden; background: #1e2329; color: #f0b90b; padding: 12px 0; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 50; }
                 .ticker { display: flex; white-space: nowrap; animation: ticker 30s linear infinite; }
                 .ticker-item { padding: 0 30px; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
                 .price-up { color: #4caf50; }
                 .price-down { color: #f44336; }
                 @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-
-                /* Partners Section */
                 .partners-section { background: #0f1216; padding: 20px 0; border-bottom: 1px solid #333; overflow: hidden; }
                 .partners-header { text-align: center; color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; font-weight: 600; }
                 .logo-slider { display: flex; width: 200%; animation: scrollLogos 40s linear infinite; }
@@ -134,7 +129,6 @@ app.get('/dashboard', (req, res) => {
                 .partner-logo { height: 30px; margin: 0 20px; opacity: 0.6; filter: grayscale(100%); transition: all 0.3s ease; object-fit: contain; }
                 .partner-logo:hover { opacity: 1; filter: grayscale(0%); transform: scale(1.1); }
                 @keyframes scrollLogos { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-
                 .content-area { padding: 20px; }
                 .card { background: #1c2026; padding: 20px; border-radius: 20px; margin-bottom: 20px; position:relative; }
                 .balance-header { font-size: 14px; color: #888; }
@@ -142,7 +136,6 @@ app.get('/dashboard', (req, res) => {
                 .badge { padding: 5px 10px; border-radius: 15px; font-size: 11px; background: #333; position:absolute; top:20px; right:20px; }
                 .action-btn { background: #f0b90b; color:black; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; font-weight:bold; border:none; width:100%; }
                 .pending-banner { background: #e67e22; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-                
                 .wa-float { position: fixed; bottom: 20px; right: 20px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-decoration: none; z-index: 100; }
             </style>
         </head>
@@ -158,7 +151,6 @@ app.get('/dashboard', (req, res) => {
                     <div class="ticker-item">XRP: <span id="xrp-p2" class="price-up">$...</span></div>
                 </div>
             </div>
-
             <div class="partners-section">
                 <div class="partners-header">Trusted by Global Financial Institutions</div>
                 <div class="logo-slider">
@@ -167,66 +159,52 @@ app.get('/dashboard', (req, res) => {
                         <img src="https://logo.clearbit.com/jpmorganchase.com" class="partner-logo" title="JP Morgan">
                         <img src="https://logo.clearbit.com/bnymellon.com" class="partner-logo" title="BNY Mellon">
                         <img src="https://logo.clearbit.com/fidelity.com" class="partner-logo" title="Fidelity">
-                        <img src="https://logo.clearbit.com/getevolved.com" class="partner-logo" title="Evolve Bank">
                         <img src="https://logo.clearbit.com/coinbase.com" class="partner-logo" title="Coinbase">
-                        <img src="https://logo.clearbit.com/marathondh.com" class="partner-logo" title="Marathon">
-                        <img src="https://logo.clearbit.com/microstrategy.com" class="partner-logo" title="MicroStrategy">
-                        <img src="https://logo.clearbit.com/bancomoc.mz" class="partner-logo" title="Banco de Moçambique">
                         <img src="https://logo.clearbit.com/revolut.com" class="partner-logo" title="Revolut">
                         <img src="https://logo.clearbit.com/investec.com" class="partner-logo" title="Investec">
+                        <span style="font-size:10px; color:#666; font-weight:bold; margin:0 10px;">BANCO DE MOZAMBIQUE</span>
                         <span style="font-size:10px; color:#666; font-weight:bold; margin:0 10px;">ARMONIE BANK SA</span>
                     </div>
                     <div class="logo-track">
-                        <img src="https://logo.clearbit.com/goldmansachs.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/jpmorganchase.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/bnymellon.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/fidelity.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/getevolved.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/coinbase.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/marathondh.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/microstrategy.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/bancomoc.mz" class="partner-logo">
-                        <img src="https://logo.clearbit.com/revolut.com" class="partner-logo">
-                        <img src="https://logo.clearbit.com/investec.com" class="partner-logo">
+                         <img src="https://logo.clearbit.com/goldmansachs.com" class="partner-logo" title="Goldman Sachs">
+                        <img src="https://logo.clearbit.com/jpmorganchase.com" class="partner-logo" title="JP Morgan">
+                        <img src="https://logo.clearbit.com/bnymellon.com" class="partner-logo" title="BNY Mellon">
+                        <img src="https://logo.clearbit.com/fidelity.com" class="partner-logo" title="Fidelity">
+                        <img src="https://logo.clearbit.com/coinbase.com" class="partner-logo" title="Coinbase">
+                        <img src="https://logo.clearbit.com/revolut.com" class="partner-logo" title="Revolut">
+                        <img src="https://logo.clearbit.com/investec.com" class="partner-logo" title="Investec">
+                        <span style="font-size:10px; color:#666; font-weight:bold; margin:0 10px;">BANCO DE MOZAMBIQUE</span>
                         <span style="font-size:10px; color:#666; font-weight:bold; margin:0 10px;">ARMONIE BANK SA</span>
                     </div>
                 </div>
             </div>
-
             <div class="content-area">
                 <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
                     <h3>Welcome</h3>
                     <a href="/logout" style="color:#f44336; text-decoration:none;">Logout</a>
                 </div>
-
                 ${user.pendingDeposit ? `
                     <div class="pending-banner">
-                        <div>
-                            <strong>Action Required:</strong> Pending deposit of $${user.pendingDeposit.amount}.
-                        </div>
+                        <div><strong>Action Required:</strong> Pending deposit of $${user.pendingDeposit.amount}.</div>
                         <a href="/pay-now" style="background:white; color:#e67e22; padding:5px 10px; border-radius:5px; text-decoration:none; font-weight:bold;">PAY NOW</a>
                     </div>
                 ` : ''}
-
                 <div class="card" style="background: linear-gradient(135deg, #1c2026 0%, #252a33 100%);">
                     <div class="balance-header">Total Portfolio Value</div>
                     <div class="balance-amount">$${(user.balance + user.lockedBonus).toFixed(2)}</div>
                     <div class="badge">AGT Tokens: ${user.agtTokens}</div>
                 </div>
-
                 <div class="card" style="background: #1a382e; border: 1px solid #2ecc71;">
                     <div class="balance-header" style="color:#a3e6c2;">30-Day Locked Bonus (20%)</div>
                     <div class="balance-amount">$${user.lockedBonus.toFixed(2)}</div>
                     <div style="font-size:12px; margin-top:5px; color:#a3e6c2;">Status: ${bonusStatus}</div>
                 </div>
-
                 <div class="card" style="padding: 15px;">
                     <form action="/initiate-deposit" method="POST" style="width:100%;">
                         <input type="number" name="amount" placeholder="Enter Deposit Amount ($)" required style="width:100%; padding:12px; border-radius:10px; border:1px solid #444; background:#000; color:white; margin-bottom:10px;">
                         <button class="action-btn">DEPOSIT & CLAIM 20%</button>
                     </form>
                 </div>
-
                 <h3>History</h3>
                 ${user.transactions.length === 0 ? '<p style="color:#555;">No transactions yet.</p>' : ''}
                 ${user.transactions.slice().reverse().map(t => `
@@ -236,30 +214,20 @@ app.get('/dashboard', (req, res) => {
                     </div>
                 `).join('')}
             </div>
-
-            <a href="https://wa.me/46704406175" class="wa-float" target="_blank">
-                <i class="fa-brands fa-whatsapp"></i>
-            </a>
-
+            <a href="https://wa.me/46704406175" class="wa-float" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
             <script>
-                // --- LIVE PRICE SIMULATION ---
                 function updatePrices() {
                     const prices = { eth: 3200, xrp: 1.10, etc: 26.50 };
-                    function getFluctuation(base) {
-                        return (base + (Math.random() * base * 0.02 - base * 0.01)).toFixed(2);
-                    }
+                    function getFluctuation(base) { return (base + (Math.random() * base * 0.02 - base * 0.01)).toFixed(2); }
                     ['p', 'p2'].forEach(suffix => {
-                        const eth = getFluctuation(prices.eth);
-                        const xrp = getFluctuation(prices.xrp);
-                        const etc = getFluctuation(prices.etc);
+                        const eth = getFluctuation(prices.eth); const xrp = getFluctuation(prices.xrp); const etc = getFluctuation(prices.etc);
                         document.getElementById('eth-' + suffix).innerText = '$' + eth;
                         document.getElementById('xrp-' + suffix).innerText = '$' + xrp;
                         document.getElementById('etc-' + suffix).innerText = '$' + etc;
                         document.getElementById('eth-' + suffix).className = Math.random() > 0.5 ? 'price-up' : 'price-down';
                     });
                 }
-                updatePrices();
-                setInterval(updatePrices, 3000);
+                updatePrices(); setInterval(updatePrices, 3000);
             </script>
         </body>
         </html>
@@ -267,12 +235,10 @@ app.get('/dashboard', (req, res) => {
 });
 
 // --- 5. DEPOSIT & PAYMENT ROUTES ---
-
 app.post('/initiate-deposit', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
     const amount = parseFloat(req.body.amount);
-
     user.pendingDeposit = { amount: amount, status: "Waiting for Payment", date: new Date() };
     res.redirect('/pay-now');
 });
@@ -303,15 +269,9 @@ app.get('/pay-now', (req, res) => {
         </head>
         <body>
             <div class="container">
-                <div class="amount-box">
-                    <p style="color:#888; margin:0;">You are depositing</p>
-                    <h1>$${user.pendingDeposit.amount}</h1>
-                </div>
-
-                <div style="background:#e67e2220; border:1px solid #e67e22; color:#e67e22; padding:10px; border-radius:8px; margin-bottom:20px; font-size:12px; text-align:center;">
-                    Please make a payment to <strong>ONE</strong> of the accounts below.
-                </div>
-
+                <div class="amount-box"><p style="color:#888; margin:0;">You are depositing</p><h1>$${user.pendingDeposit.amount}</h1></div>
+                <div style="background:#e67e2220; border:1px solid #e67e22; color:#e67e22; padding:10px; border-radius:8px; margin-bottom:20px; font-size:12px; text-align:center;">Please make a payment to <strong>ONE</strong> of the accounts below.</div>
+                
                 <div class="pay-card">
                     <div class="pay-title">🇺🇸 US Account</div>
                     <div class="pay-row"><span class="pay-label">Bank Name</span> <span class="pay-val">Bank of America</span></div>
@@ -338,22 +298,12 @@ app.get('/pay-now', (req, res) => {
                 </div>
                 <div class="pay-card">
                     <div class="pay-title"><i class="fa-brands fa-bitcoin"></i> Bitcoin</div>
-                    <div style="font-family: monospace; word-break: break-all; background: #000; padding: 10px; border-radius: 5px; border: 1px solid #444;">
-                        bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
-                    </div>
+                    <div style="font-family: monospace; word-break: break-all; background: #000; padding: 10px; border-radius: 5px; border: 1px solid #444;">bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7</div>
                 </div>
 
-                <form action="/confirm-payment-sent" method="POST">
-                    <button class="btn-sent">✅ I HAVE SENT PAYMENT</button>
-                </form>
-
-                <a href="https://wa.me/46704406175" target="_blank" class="wa-btn">
-                    <i class="fa-brands fa-whatsapp"></i> Chat with Support
-                </a>
-                
-                <div style="text-align:center; margin-top:20px;">
-                    <a href="/cancel-deposit" style="color:#f44336; font-size:12px;">Cancel Deposit</a>
-                </div>
+                <form action="/confirm-payment-sent" method="POST"><button class="btn-sent">✅ I HAVE SENT PAYMENT</button></form>
+                <a href="https://wa.me/46704406175" target="_blank" class="wa-btn"><i class="fa-brands fa-whatsapp"></i> Chat with Support</a>
+                <div style="text-align:center; margin-top:20px;"><a href="/cancel-deposit" style="color:#f44336; font-size:12px;">Cancel Deposit</a></div>
             </div>
         </body>
     `);
@@ -376,7 +326,6 @@ app.get('/admin', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const admin = findUser(req.session.userId);
     if (!admin.isAdmin) return res.send("Access Denied");
-
     const pendingUsers = users.filter(u => u.pendingDeposit && u.pendingDeposit.status === "Pending Admin Review");
 
     res.send(`
@@ -402,7 +351,6 @@ app.post('/admin/confirm-deposit', (req, res) => {
     const admin = findUser(req.session.userId);
     if (!admin.isAdmin) return res.redirect('/');
     const targetUser = findUser(req.body.userId);
-
     if (targetUser && targetUser.pendingDeposit) {
         const amount = targetUser.pendingDeposit.amount;
         const bonus = amount * 0.20;
@@ -416,7 +364,6 @@ app.post('/admin/confirm-deposit', (req, res) => {
 
         targetUser.transactions.push({ type: "Deposit Confirmed", amount: amount, date: new Date().toLocaleDateString() });
         targetUser.transactions.push({ type: "20% Bonus (Locked)", amount: bonus, date: new Date().toLocaleDateString() });
-        
         generatePDFReceipt(targetUser, amount, bonus);
         targetUser.pendingDeposit = null;
     }
