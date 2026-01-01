@@ -119,12 +119,24 @@ app.get('/dashboard', (req, res) => {
             .icon-with { background: rgba(255, 61, 0, 0.15); color: #ff3d00; }
 
             .footer-partners { margin-top: 40px; border-top: 1px solid #222; padding-top: 20px; overflow: hidden; background: #000; }
-            .logo-slider { display: flex; width: 200%; animation: scroll 40s linear infinite; }
-            .logo-track { display: flex; align-items: center; justify-content: space-around; width: 50%; }
-            .partner-logo { height: 40px; width:auto; margin: 0 25px; filter: brightness(0) invert(1); opacity: 0.6; transition: 0.3s; }
+            .logo-slider { display: flex; width: 400%; animation: scroll 60s linear infinite; } /* Made wider for more logos */
+            .logo-track { display: flex; align-items: center; justify-content: space-around; width: 25%; }
+            
+            /* LOGO VISIBILITY FIX: */
+            .partner-logo { 
+                height: 40px; 
+                width: auto;
+                margin: 0 30px; 
+                /* TURN BLACK LOGOS WHITE */
+                filter: brightness(0) invert(1); 
+                opacity: 0.7; 
+                transition: 0.3s; 
+                display: block;
+            }
             .partner-logo:hover { opacity: 1; transform: scale(1.1); }
+            
             .text-link { color: #666; font-size: 10px; font-weight: 700; text-decoration: none; border: 1px solid #333; padding: 5px 10px; border-radius: 5px; margin: 0 10px; white-space: nowrap; }
-            @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+            @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-25%)}}
 
             /* Modal Styles */
             .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
@@ -215,22 +227,67 @@ app.get('/dashboard', (req, res) => {
             <div class="footer-partners">
                 <div style="text-align:center;color:#444;font-size:10px;text-transform:uppercase;margin-bottom:15px;font-weight:bold">Trusted by Global Leaders</div>
                 <div class="logo-slider">
+                    
                     <div class="logo-track">
-                        <a href="https://www.goldmansachs.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo"></a>
-                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/JPMorgan_Chase_logo_2008.svg/1200px-JPMorgan_Chase_logo_2008.svg.png" class="partner-logo"></a>
-                        <a href="https://www.coinbase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Coinbase.svg" class="partner-logo"></a>
-                        <a href="https://www.fidelity.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Fidelity_Investments.svg" class="partner-logo"></a>
-                        <a href="https://www.bancomoc.mz" target="_blank" class="text-link">BANCO DE MOÇAMBIQUE</a>
-                        <a href="#" class="text-link">ARMONIE BANK SA</a>
+                        <a href="https://www.sc.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" class="partner-logo" title="Standard Chartered"></a>
+                        <a href="https://www.bankofamerica.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" class="partner-logo" title="Bank of America"></a>
+                        <a href="https://www.bnymellon.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo" title="BNY Mellon"></a>
+                        <a href="https://www.citigroup.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" class="partner-logo" title="Citibank"></a>
+                        <a href="https://mabanque.bnpparibas" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" class="partner-logo" title="BNP Paribas"></a>
+                        <a href="https://www.morganstanley.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" class="partner-logo" title="Morgan Stanley"></a>
+                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo" title="JPMorgan Chase"></a>
+                        <a href="https://www.goldmansachs.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo" title="Goldman Sachs"></a>
+                        <a href="https://www.mufg.jp" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" class="partner-logo" title="MUFG"></a>
+                        <a href="https://www.investec.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" class="partner-logo" title="Investec"></a>
+                        <a href="https://www.revolut.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo" title="Revolut"></a>
+                        <a href="https://www.bunq.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/bc/Bunq_logo.svg/2560px-Bunq_logo.svg.png" class="partner-logo" title="Bunq"></a>
                     </div>
+
                     <div class="logo-track">
+                        <a href="https://www.sc.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" class="partner-logo"></a>
+                        <a href="https://www.bankofamerica.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bnymellon.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.citigroup.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" class="partner-logo"></a>
+                        <a href="https://mabanque.bnpparibas" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" class="partner-logo"></a>
+                        <a href="https://www.morganstanley.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" class="partner-logo"></a>
+                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo"></a>
                         <a href="https://www.goldmansachs.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo"></a>
-                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/JPMorgan_Chase_logo_2008.svg/1200px-JPMorgan_Chase_logo_2008.svg.png" class="partner-logo"></a>
-                        <a href="https://www.coinbase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Coinbase.svg" class="partner-logo"></a>
-                        <a href="https://www.fidelity.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Fidelity_Investments.svg" class="partner-logo"></a>
-                        <a href="https://www.bancomoc.mz" target="_blank" class="text-link">BANCO DE MOÇAMBIQUE</a>
-                        <a href="#" class="text-link">ARMONIE BANK SA</a>
+                        <a href="https://www.mufg.jp" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.investec.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" class="partner-logo"></a>
+                        <a href="https://www.revolut.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bunq.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/bc/Bunq_logo.svg/2560px-Bunq_logo.svg.png" class="partner-logo"></a>
                     </div>
+                    
+                    <div class="logo-track">
+                        <a href="https://www.sc.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" class="partner-logo"></a>
+                        <a href="https://www.bankofamerica.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bnymellon.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.citigroup.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" class="partner-logo"></a>
+                        <a href="https://mabanque.bnpparibas" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" class="partner-logo"></a>
+                        <a href="https://www.morganstanley.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" class="partner-logo"></a>
+                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo"></a>
+                        <a href="https://www.goldmansachs.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo"></a>
+                        <a href="https://www.mufg.jp" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.investec.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" class="partner-logo"></a>
+                        <a href="https://www.revolut.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bunq.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/bc/Bunq_logo.svg/2560px-Bunq_logo.svg.png" class="partner-logo"></a>
+                    </div>
+                    
+                    <div class="logo-track">
+                        <a href="https://www.sc.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" class="partner-logo"></a>
+                        <a href="https://www.bankofamerica.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bnymellon.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.citigroup.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" class="partner-logo"></a>
+                        <a href="https://mabanque.bnpparibas" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" class="partner-logo"></a>
+                        <a href="https://www.morganstanley.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" class="partner-logo"></a>
+                        <a href="https://www.jpmorganchase.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" class="partner-logo"></a>
+                        <a href="https://www.goldmansachs.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" class="partner-logo"></a>
+                        <a href="https://www.mufg.jp" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.investec.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" class="partner-logo"></a>
+                        <a href="https://www.revolut.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" class="partner-logo"></a>
+                        <a href="https://www.bunq.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/bc/Bunq_logo.svg/2560px-Bunq_logo.svg.png" class="partner-logo"></a>
+                    </div>
+
                 </div>
             </div>
         </div>
