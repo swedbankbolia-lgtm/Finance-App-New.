@@ -35,10 +35,10 @@ const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === 
 // --- ROUTES ---
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:#1c2026;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px}
-    input{width:100%;padding:15px;margin:10px 0;background:#0b0e11;border:1px solid #333;color:white;border-radius:8px;box-sizing:border-box}
-    button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px}
+    body{background:#f4f6f8;color:#333;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
+    button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:#000}
     </style></head><body><div class="box"><h2 style="color:#f0b90b">BlezzyPay</h2><form action="/login" method="POST">
     <input type="email" name="email" placeholder="Email" required><input type="password" name="passcode" placeholder="Passcode" required><button>LOGIN</button></form></div></body></html>`);
 });
@@ -62,32 +62,36 @@ app.get('/dashboard', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{background:#0f1216;color:white;font-family:sans-serif;margin:0;padding-bottom:100px}
-        .tick{background:#16191f;padding:10px;border-bottom:1px solid #222;white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
+        body{background:#f4f6f8;color:#333;font-family:sans-serif;margin:0;padding-bottom:100px}
+        .tick{background:#1c2026;color:white;padding:10px;border-bottom:1px solid #ddd;white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
         .con{padding:20px;max-width:480px;margin:0 auto}
-        .card{background:linear-gradient(135deg,#2b323b,#1c2026);padding:25px;border-radius:20px;margin-bottom:20px;border:1px solid #333}
-        .btn{width:48%;padding:15px;border-radius:12px;border:none;font-weight:bold;cursor:pointer}
-        .btn-y{background:#f0b90b} .btn-g{background:#2c333e;color:white;border:1px solid #333}
+        .card{background:linear-gradient(135deg, #ffffff, #f9f9f9);padding:25px;border-radius:20px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,0.05);border:1px solid #eee}
+        .btn{width:48%;padding:15px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .btn-y{background:#f0b90b;color:#000} .btn-g{background:#fff;color:#333;border:1px solid #ddd}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
-        .stat{background:#1c2026;padding:15px;border-radius:15px;width:48%;box-sizing:border-box}
-        .logo-wrap{background:black;padding:20px 0;overflow:hidden;white-space:nowrap}
-        .logo{height:35px;margin:0 20px;filter:brightness(0) invert(1);opacity:0.7;vertical-align:middle}
-        .tx-item{background:#181b21;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
-        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center}
-        .m-con{background:#1c2026;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0}
-        input,select{width:100%;padding:15px;background:#0b0e11;border:1px solid #333;color:white;margin:10px 0;border-radius:8px;box-sizing:border-box}
+        .stat{background:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+        
+        /* LOGO SECTION - WHITE BACKGROUND */
+        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee}
+        .logo{height:35px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} /* No Filter needed for white BG */
+        .logo:hover{opacity:1;transform:scale(1.1)}
+
+        .tx-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
+        .m-con{background:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
+        input,select{width:100%;padding:15px;background:#f9f9f9;border:1px solid #ddd;color:#333;margin:10px 0;border-radius:8px;box-sizing:border-box}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
-        <div class="row"><h3>Hi User</h3><a href="/logout" style="color:red">Logout</a></div>
-        ${u.pendingDeposit ? `<div style="background:#e67e22;padding:10px;border-radius:10px;margin-bottom:20px;color:black"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:white">PAY NOW</a></div>` : ''}
+        <div class="row"><h3>Hi User</h3><a href="/logout" style="color:red;text-decoration:none;font-weight:bold">Logout</a></div>
+        ${u.pendingDeposit ? `<div style="background:#fff3cd;padding:15px;border-radius:10px;margin-bottom:20px;color:#856404;border:1px solid #ffeeba"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:#856404;font-weight:bold">PAY NOW</a></div>` : ''}
         
-        <div class="card">
-            <div style="color:#888;font-size:12px">Total Assets</div>
-            <div style="font-size:32px;font-weight:bold">$${(u.balance+u.lockedCapital+u.lockedProfit).toFixed(2)}</div>
-            <div class="row" style="margin-top:20px;border-top:1px solid #444;padding-top:10px">
-                <div><small>CASH</small><br><b style="color:#00c853">$${u.balance.toFixed(2)}</b></div>
-                <div style="text-align:right"><small>LOCKED</small><br><b>$${u.lockedCapital.toFixed(2)}</b></div>
+        <div class="card" style="background:#fff;border:1px solid #e0e0e0">
+            <div style="color:#666;font-size:12px">Total Assets</div>
+            <div style="font-size:32px;font-weight:bold;color:#333">$${(u.balance+u.lockedCapital+u.lockedProfit).toFixed(2)}</div>
+            <div class="row" style="margin-top:20px;border-top:1px solid #eee;padding-top:10px">
+                <div><small style="color:#666">CASH</small><br><b style="color:#00c853">$${u.balance.toFixed(2)}</b></div>
+                <div style="text-align:right"><small style="color:#666">LOCKED</small><br><b style="color:#333">$${u.lockedCapital.toFixed(2)}</b></div>
             </div>
         </div>
 
@@ -97,8 +101,8 @@ app.get('/dashboard', (req, res) => {
         </div>
 
         <div class="row">
-            <div class="stat"><small>Pending Yield</small><br><b style="color:#f0b90b">$${u.lockedProfit}</b><br><small style="font-size:9px">Releases in 30 Days</small></div>
-            <div class="stat"><small>Earned</small><br><b style="color:#00c853">$${u.balance}</b></div>
+            <div class="stat"><small style="color:#666">Pending Yield</small><br><b style="color:#f0b90b">$${u.lockedProfit}</b><br><small style="font-size:9px;color:#999">Releases in 30 Days</small></div>
+            <div class="stat"><small style="color:#666">Earned</small><br><b style="color:#00c853">$${u.balance}</b></div>
         </div>
 
         <h3>History</h3>
@@ -110,7 +114,7 @@ app.get('/dashboard', (req, res) => {
     <div id="dep" class="modal"><div class="m-con">
         <h3>Deposit (Locked 30 Days)</h3><form action="/dep" method="POST">
         <input type="number" name="amount" placeholder="Amount" required><button class="btn btn-y" style="width:100%">PROCEED</button></form>
-        <br><button onclick="closeM()" style="background:none;border:none;color:#666">Close</button>
+        <br><button onclick="closeM()" style="background:none;border:none;color:#666;cursor:pointer">Close</button>
     </div></div>
 
     <div id="with" class="modal"><div class="m-con">
@@ -119,7 +123,7 @@ app.get('/dashboard', (req, res) => {
         <select name="type"><option value="std">Standard (48h) - Free</option><option value="inst">Instant - 3% Fee</option></select>
         <input placeholder="Bank Name" required><input placeholder="Account No" required>
         <button class="btn btn-y" style="width:100%">SUBMIT</button></form>
-        <br><button onclick="closeM()" style="background:none;border:none;color:#666">Close</button>
+        <br><button onclick="closeM()" style="background:none;border:none;color:#666;cursor:pointer">Close</button>
     </div></div>
 
     <script>
@@ -139,12 +143,12 @@ app.post('/dep', (req, res) => {
 app.get('/pay-now', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u.pendingDeposit) return res.redirect('/dashboard');
-    res.send(`<body style="background:#0f1216;color:white;font-family:sans-serif;padding:20px;text-align:center">
+    res.send(`<body style="background:#f4f6f8;color:#333;font-family:sans-serif;padding:20px;text-align:center">
     <h1 style="color:#f0b90b">$${u.pendingDeposit.amount}</h1>
-    <div style="background:#1c2026;padding:20px;margin:10px 0;border-radius:10px">
+    <div style="background:white;padding:20px;margin:10px 0;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.05)">
     <b>US:</b> Bank of America | 026009593<br><br><b>EU:</b> Barclay | GB33BARC20658259151311<br><br><b>Bitcoin:</b> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
     </div>
-    <form action="/sent" method="POST"><button style="padding:15px;width:100%;background:#00c853;border:none;font-weight:bold;cursor:pointer">I SENT PAYMENT</button></form>
+    <form action="/sent" method="POST"><button style="padding:15px;width:100%;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px">I SENT PAYMENT</button></form>
     </body>`);
 });
 
