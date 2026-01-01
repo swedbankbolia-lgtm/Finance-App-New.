@@ -6,29 +6,49 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'blezzy_key_99', resave: false, saveUninitialized: true }));
 
-// --- PARTNERS (Direct Wiki Links) ---
+// --- PARTNERS (Citi & Morgan Stanley Added) ---
 const partners = [
     { name: "Citi", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
     { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" },
     { name: "Standard Chartered", link: "https://www.sc.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" },
-    { name: "Swedbank", link: "https://www.swedbank.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/66/Swedbank_logo.svg" },
-    { name: "BBVA", link: "https://www.bbva.com", img: "https://upload.wikimedia.org/wikipedia/commons/e/e3/BBVA_2019.svg" },
     { name: "Bank of America", link: "https://www.bankofamerica.com", img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" },
-    { name: "BNY Mellon", link: "https://www.bnymellon.com", img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" },
-    { name: "BNP Paribas", link: "https://mabanque.bnpparibas", img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" },
     { name: "JPMorgan", link: "https://www.jpmorganchase.com", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" },
     { name: "Goldman Sachs", link: "https://www.goldmansachs.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" },
+    { name: "BNY Mellon", link: "https://www.bnymellon.com", img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" },
+    { name: "BNP Paribas", link: "https://mabanque.bnpparibas", img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" },
     { name: "MUFG", link: "https://www.mufg.jp", img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" },
     { name: "Investec", link: "https://www.investec.com", img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" },
     { name: "Revolut", link: "https://www.revolut.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" },
-    { name: "Bunq", link: "https://www.bunq.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/bc/Bunq_logo.svg" }
+    { name: "Bunq", link: "https://www.bunq.com", img: "https://upload.wikimedia.org/wikipedia/commons/c/bc/Bunq_logo.svg" },
+    { name: "Swedbank", link: "https://www.swedbank.com", img: "https://upload.wikimedia.org/wikipedia/commons/6/66/Swedbank_logo.svg" },
+    { name: "BBVA", link: "https://www.bbva.com", img: "https://upload.wikimedia.org/wikipedia/commons/e/e3/BBVA_2019.svg" }
 ];
 
 // --- DATABASE ---
 const users = [
     { id: "admin", email: "emmanuel.iyere84@gmail.com", passcode: "1234", isAdmin: true, transactions: [] },
-    { id: "user1", email: "user@test.com", passcode: "1111", balance: 0, lockedCapital: 1000, lockedProfit: 200, maturityDate: "2/1/2026", agtTokens: 1000, isAdmin: false, 
-      transactions: [{ type: "Deposit", amount: 1000, date: "1/1/2026", details: "Locked" }, { type: "Pending Yield", amount: 200, date: "1/1/2026", details: "Releases Feb 1" }], pendingDeposit: null }
+    { 
+        id: "user1", 
+        email: "user@test.com", 
+        passcode: "1111", 
+        
+        // PROFILE DETAILS
+        walletName: "Blezzy Platinum Vault",
+        address: "Maputo, Mozambique",
+        phone: "+258 84 555 0199",
+        
+        balance: 0, 
+        lockedCapital: 1000, 
+        lockedProfit: 200, 
+        maturityDate: "2/1/2026", 
+        agtTokens: 1000, 
+        isAdmin: false, 
+        transactions: [
+            { type: "Deposit", amount: 1000, date: "1/1/2026", details: "Locked" }, 
+            { type: "Pending Yield", amount: 200, date: "1/1/2026", details: "Releases Feb 1" }
+        ], 
+        pendingDeposit: null 
+    }
 ];
 
 const findUser = (id) => users.find(u => u.id === id);
@@ -54,6 +74,7 @@ app.post('/login', (req, res) => {
     res.send('Invalid Credentials. <a href="/">Try Again</a>');
 });
 
+// --- DASHBOARD ---
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const u = findUser(req.session.userId);
@@ -72,20 +93,26 @@ app.get('/dashboard', (req, res) => {
         .btn-y{background:#f0b90b;color:#000} .btn-g{background:#fff;color:#333;border:1px solid #ddd}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
         .stat{background:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
-        
-        /* LOGO SECTION - WHITE BACKGROUND */
         .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #eee}
         .logo{height:35px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s} 
         .logo:hover{opacity:1;transform:scale(1.1)}
-
         .tx-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
         .m-con{background:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.1)}
         input,select{width:100%;padding:15px;background:#f9f9f9;border:1px solid #ddd;color:#333;margin:10px 0;border-radius:8px;box-sizing:border-box}
+        .top-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .set-btn{color:#666;font-size:20px;text-decoration:none}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
-        <div class="row"><h3>Hi User</h3><a href="/logout" style="color:red;text-decoration:none;font-weight:bold">Logout</a></div>
+        <div class="top-nav">
+            <div><h3>Hi User</h3><p style="margin:0;font-size:12px;color:#888">BlezzyPay Premier</p></div>
+            <div>
+                <a href="/settings" class="set-btn" style="margin-right:15px"><i class="fa-solid fa-gear"></i></a>
+                <a href="/logout" style="color:red;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
+            </div>
+        </div>
+
         ${u.pendingDeposit ? `<div style="background:#fff3cd;padding:15px;border-radius:10px;margin-bottom:20px;color:#856404;border:1px solid #ffeeba"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:#856404;font-weight:bold">PAY NOW</a></div>` : ''}
         
         <div class="card" style="background:#fff;border:1px solid #e0e0e0">
@@ -133,6 +160,51 @@ app.get('/dashboard', (req, res) => {
     function closeM(){document.querySelectorAll('.modal').forEach(e=>e.style.display='none')}
     </script>
     </body></html>`);
+});
+
+// --- SETTINGS PAGE ---
+app.get('/settings', (req, res) => {
+    if (!req.session.userId) return res.redirect('/');
+    const u = findUser(req.session.userId);
+    
+    res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body{background:#f4f6f8;color:#333;font-family:sans-serif;margin:0;padding:20px}
+        .con{max-width:480px;margin:0 auto}
+        .card{background:white;padding:25px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.05);margin-bottom:20px}
+        .label{font-size:12px;color:#888;margin-bottom:5px;display:block}
+        .val{font-size:16px;font-weight:bold;margin-bottom:15px;display:block;border-bottom:1px solid #eee;padding-bottom:10px}
+        .btn-close{width:100%;padding:15px;background:#ffebee;color:#d32f2f;border:none;font-weight:bold;border-radius:12px;cursor:pointer}
+    </style></head><body>
+    <div class="con">
+        <a href="/dashboard" style="color:#333;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        <h2 style="margin-bottom:20px">Settings</h2>
+        
+        <div class="card">
+            <span class="label">Wallet Name</span>
+            <span class="val">${u.walletName}</span>
+            
+            <span class="label">Email Address</span>
+            <span class="val">${u.email}</span>
+            
+            <span class="label">Phone Number</span>
+            <span class="val">${u.phone}</span>
+            
+            <span class="label">Billing Address</span>
+            <span class="val">${u.address}</span>
+        </div>
+
+        <form action="/close-account" method="POST">
+            <button class="btn-close">CLOSE ACCOUNT</button>
+        </form>
+    </div>
+    </body></html>`);
+});
+
+app.post('/close-account', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
 });
 
 // --- ACTIONS ---
