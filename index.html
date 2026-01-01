@@ -2,19 +2,159 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Finance App - Maputo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blezzy Finance | AFGoldToken</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; }
+        :root {
+            --gold: linear-gradient(135deg, #d4af37 0%, #f9e295 50%, #b8860b 100%);
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Main Wallet Card */
+        .wallet-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wallet-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--gold);
+        }
+
+        h1 { margin: 10px 0; font-size: 28px; }
+        .status { color: #4caf50; font-weight: bold; margin-bottom: 20px; }
+
+        .btn-gold {
+            background: var(--gold);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .btn-gold:hover { transform: scale(1.02); }
+
+        /* Partners Section */
+        .partners {
+            margin-top: 40px;
+            padding: 20px;
+        }
+
+        .partner-logos {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            filter: grayscale(100%);
+            opacity: 0.7;
+        }
+
+        .partner-logos a:hover { filter: grayscale(0%); opacity: 1; }
+        .partner-logos img { width: 50px; height: auto; }
+
+        /* AFGoldToken Section */
+        .token-section {
+            margin-top: 50px;
+            background: rgba(212, 175, 55, 0.05);
+            border: 1px dashed #d4af37;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .token-header { color: #d4af37; font-weight: bold; font-size: 20px; }
+        .badge {
+            background: #cc0000;
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .presale-btn {
+            background: #333;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .referral-only { font-size: 12px; color: #888; margin-top: 8px; }
     </style>
 </head>
 <body>
-    <div class="card">
+
+<div class="container">
+    <div class="wallet-card">
         <h1>Blezzy Finance App</h1>
-        <p>Status: 🟢 Connected to MongoDB Atlas</p>
+        <p class="status">● Connected to MongoDB Atlas</p>
         <p>Location: Maputo, Mozambique</p>
-        <button onclick="alert('Wallet balance: 0.00 MT')">Check Balance</button>
+        <button class="btn-gold" onclick="alert('Balance: 0.00 MT')">Check Balance</button>
     </div>
+
+    <div class="partners">
+        <p>Our Partners</p>
+        <div class="partner-logos">
+            <a href="https://www.visa.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa"></a>
+            <a href="https://www.mastercard.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard"></a>
+            <a href="https://www.imbm.co.mz" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/2/2b/Millennium_bim_logo.png" alt="BIM"></a>
+        </div>
+    </div>
+
+    <div class="token-section">
+        <div class="token-header">AFGold Token (AFGT)</div>
+        <p>Backed by 1g of Physical Gold per Token</p>
+        <p><span class="badge">Pending Approval</span><br>
+        <small>Awaiting EU, ECOWAS, and EAC regulatory clearance.</small></p>
+        
+        <button class="presale-btn" onclick="checkReferral()">Join Presale</button>
+        <p class="referral-only">Buy only available by referral</p>
+    </div>
+</div>
+
+<script>
+    function checkReferral() {
+        let code = prompt("Enter your Referral Code to access the Presale:");
+        if (code) {
+            alert("Referral code valid. Redirecting to secure portal...");
+        } else {
+            alert("Access Denied: A valid referral is required for the AFGT Presale.");
+        }
+    }
+</script>
+
 </body>
 </html>
