@@ -1,236 +1,333 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const nodemailer = require('nodemailer');
 const app = express();
 
-// --- 1. CONFIGURATION ---
-app.use(express.urlencoded({ extended: true })); // Allows us to read the login form
+app.use(express.urlencoded({ extended: true }));
 app.use(session({ 
-    secret: 'blezzy_secret_key_2026', 
+    secret: process.env.SESSION_SECRET || 'blezzy_pay_gold_2026', 
     resave: false, 
     saveUninitialized: true 
 }));
 
-// --- 2. MOCK DATABASE (Synchronous & Fail-Proof) ---
-// We define the user directly with a plain text password for the demo.
-const users = [
-    {
-        id: "user_1",
-        email: "admin@test.com",
-        password: "123", // PLAIN TEXT PASSWORD (No encryption for demo)
-        balance: 4200.50,
-        transactions: [
-            { type: "Starbucks, Coffee", amount: 6.50, date: new Date() },
-            { type: "Netflix Subscription", amount: 19.99, date: new Date() },
-            { type: "Deposit", amount: 500.00, date: new Date() }
-        ]
-    }
-];
+// --- 1. EMAIL SYSTEM ---
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+});
 
-// Helper to find user
-const findUser = (id) => users.find(u => u.id === id);
-const findUserByEmail = (email) => users.find(u => u.email === email);
+const sendEmail = async (to, subject, text) => {
+    try {
+        await transporter.sendMail({
+            from: `"BlezzyPay Finance" <${process.env.EMAIL_USER}>`,
+            to: to, subject: subject, text: text
+        });
+    } catch (err) { console.log("Mail Error:", err); }
+};
 
-// --- 3. THE DASHBOARD UI ---
-app.get('/dashboard', (req, res) => {
+// --- 2. DATABASE SCHEMA ---
+const UserSchema = new mongoose.Schema({
+    email: { type: String, unique: true, required: true },
+    password: { type: String, required: true },
+    balance: { type: Number, default: 0 },
+    lockedBonus: { type: Number, default: 0 },
+    agtTokens: { type: Number, default: 0 }, 
+    referredBy: { type: String, default: null },
+    activeRefsCount: { type: Number, default: 0 }, 
+    hasReceivedMilestone: { type: Boolean, default: false },
+    pendingDeposits: [{ amount: Number, status: { type: String, default: 'Pending' }, date: { type: Date, default: Date.now } }],
+    transactions: [{ type: { type: String }, amount: Number, date: { type: Date, default: Date.now } }]
+});
+const User = mongoose.model('User', UserSchema);
+const Settings = mongoose.model('Settings', new mongoose.Schema({ globalMessage: String }));
+
+const MASTER_KEY = "BlezzyAdmin99#"; 
+
+// --- 3. DASHBOARD (USER VIEW) ---
+app.get('/dashboard', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    
-    const user = findUser(req.session.userId);
-    if (!user) return res.redirect('/'); // Safety check
-
-    // Visual Calculations
-    const billsDue = 300;
-    const available = user.balance;
-    const percentage = 80;
+    const user = await User.findById(req.session.userId);
+    const isAdmin = user.email === "emmanuel.iyere84@gmail.com";
+    const refLink = `${req.protocol}://${req.get('host')}/?ref=${user.email}`;
+    const settings = await Settings.findOne({}) || { globalMessage: "" };
 
     res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
         <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>BlezzyPay Smart Wallet</title>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            <style>
-                :root {
-                    --bg-dark: #0f1216; --card-bg: #1c2026; --text-main: #ffffff;
-                    --text-muted: #8b95a5; --accent-green: #34d399; --accent-orange: #fb923c;
-                }
-                * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-                body { background-color: var(--bg-dark); font-family: 'Inter', sans-serif; color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
-                .app-container { width: 100%; max-width: 420px; padding: 20px 24px; position: relative; padding-bottom: 100px; }
-                .header-meta { margin-top: 10px; margin-bottom: 24px; }
-                .time { font-size: 14px; font-weight: 500; }
-                .date { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-                .feed-label { float: right; font-size: 12px; color: var(--text-muted); margin-top: -35px; }
-                .insights-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-                .insight-pill { min-width: 220px; padding: 16px; border-radius: 24px; background: rgba(255,255,255,0.03); display: flex; flex-direction: column; justify-content: space-between; position: relative; font-size: 13px; line-height: 1.4; }
-                .pill-green { border: 1px solid rgba(52, 211, 153, 0.3); box-shadow: 0 0 15px rgba(52, 211, 153, 0.1) inset; }
-                .pill-green .arrow { color: var(--accent-green); align-self: flex-end; margin-top: 8px; }
-                .pill-orange { border: 1px solid rgba(251, 146, 60, 0.3); box-shadow: 0 0 15px rgba(251, 146, 60, 0.1) inset; }
-                .pill-orange .arrow { color: var(--accent-orange); align-self: flex-end; margin-top: 8px; }
-                .balance-card { background: #1e222b; border-radius: 28px; padding: 24px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-                .bal-amount { font-size: 36px; font-weight: 700; letter-spacing: -1px; }
-                .chart-container { width: 70px; height: 70px; border-radius: 50%; background: conic-gradient(var(--accent-green) ${percentage}%, #2c333e 0); display: flex; align-items: center; justify-content: center; }
-                .chart-inner { width: 58px; height: 58px; background: #1e222b; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
-                .section-title { margin-top: 32px; margin-bottom: 16px; font-size: 15px; font-weight: 500; }
-                .t-card { background: #1e222b; border-radius: 20px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-                .t-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-                .icon-starbucks { background: #1a382e; color: #00d2aa; }
-                .icon-netflix { background: #000; color: #e50914; }
-                .icon-deposit { background: #162822; color: #2ecc71; }
-                .icon-withdraw { background: #2a1818; color: #e74c3c; }
-                .t-info { flex: 1; margin-left: 14px; }
-                .t-name { font-size: 14px; font-weight: 500; color: #fff; }
-                .t-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
-                .t-amount { font-size: 15px; font-weight: 600; text-align: right; }
-                .bottom-dock { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(30, 35, 41, 0.85); backdrop-filter: blur(12px); padding: 12px 30px; border-radius: 40px; display: flex; gap: 40px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 20px 40px rgba(0,0,0,0.5); z-index: 100; }
-                .dock-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-                .dock-circle { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 6px; }
-                .btn-scan { background: linear-gradient(135deg, #355c7d, #6c5b7b); border: 2px solid #5fa699; }
-                .btn-send { background: linear-gradient(135deg, #1d976c, #93f9b9); color: #000; border: 2px solid #6ed1a6; }
-                .btn-topup { background: linear-gradient(135deg, #f09819, #edde5d); color: #000; border: 2px solid #f2c94c; }
-                .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; align-items: flex-end; }
-                .modal-content { background: #1c2026; width: 100%; border-radius: 24px 24px 0 0; padding: 30px; animation: slideUp 0.3s ease; }
-                @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-                input { width: 100%; padding: 15px; background: #0f1216; border: 1px solid #333; color: white; border-radius: 12px; margin-bottom: 15px; }
-                .submit-btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: var(--accent-green); color: #000; }
-                .close-modal { float: right; font-size: 20px; cursor: pointer; color: #fff; margin-bottom: 15px; }
-            </style>
+            <title>BlezzyPay Dashboard</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
         </head>
-        <body>
-            <div class="app-container">
-                <div class="header-meta">
-                    <div class="time">10:00 AM</div>
-                    <div class="date">Mon, Oct 26, 2026</div>
-                    <div class="feed-label">Predictive Insights Feed</div>
-                </div>
-                <div class="insights-scroll">
-                    <div class="insight-pill pill-green"><span>You're $50 under budget. Move to savings?</span><i class="fa-solid fa-arrow-right arrow"></i></div>
-                    <div class="insight-pill pill-orange"><span>Utility bill detected: Pay now.</span><i class="fa-solid fa-arrow-right arrow"></i></div>
-                </div>
-                <div class="balance-card">
-                    <div>
-                        <div style="font-size:14px; font-weight:500; margin-bottom:8px;">Smart Balance</div>
-                        <div class="bal-amount">$${available.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                        <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">available — $${billsDue} due tomorrow</div>
-                    </div>
-                    <div class="chart-container"><div class="chart-inner">${Math.round(percentage)}%</div></div>
-                </div>
-                <div class="section-title">Smart Transaction <br><span style="font-size:12px; color:#6b7280; font-weight:400;">TODAY</span></div>
-                
-                ${user.transactions.slice().reverse().map(t => {
-                    let iconClass = 'fa-arrow-right-arrow-left';
-                    let bgClass = 'background:#333;';
-                    let isNegative = !t.type.includes("Deposit");
-                    
-                    if(t.type.includes('Starbucks')) { iconClass = 'fa-mug-hot'; bgClass = 'icon-starbucks'; }
-                    else if(t.type.includes('Netflix')) { iconClass = 'fa-film'; bgClass = 'icon-netflix'; }
-                    else if(t.type.includes('Deposit')) { iconClass = 'fa-arrow-down'; bgClass = 'icon-deposit'; }
-                    else { iconClass = 'fa-arrow-up'; bgClass = 'icon-withdraw'; }
-
-                    return `
-                    <div class="t-card">
-                        <div class="t-icon" style="${bgClass}"><i class="fa-solid ${iconClass}"></i></div>
-                        <div class="t-info"><div class="t-name">${t.type}</div><div class="t-meta">Transaction</div></div>
-                        <div class="t-amount" style="color: ${isNegative ? '#fff' : '#2ecc71'}">${isNegative ? '-' : '+'}$${t.amount.toFixed(2)}</div>
-                    </div>`;
-                }).join('')}
-                
-                <div style="text-align:center; margin-top:20px; color:#555; font-size:12px;">Demo Mode Active</div>
-            </div>
-
-            <div class="bottom-dock">
-                <div class="dock-item" onclick="openModal('withdraw')"><div class="dock-circle btn-scan"><i class="fa-solid fa-qrcode"></i></div><div class="dock-label">Scan/Pay</div></div>
-                <div class="dock-item" onclick="openModal('transfer')"><div class="dock-circle btn-send"><i class="fa-regular fa-paper-plane"></i></div><div class="dock-label">Send</div></div>
-                <div class="dock-item" onclick="openModal('deposit')"><div class="dock-circle btn-topup"><i class="fa-solid fa-plus"></i></div><div class="dock-label">Top Up</div></div>
-            </div>
-
-            <div id="depositModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-modal" onclick="closeModals()">&times;</span>
-                    <h3>Top Up Balance</h3>
-                    <form action="/request-deposit" method="POST">
-                        <input type="number" name="amount" placeholder="Amount ($)" required>
-                        <button class="submit-btn">Request Deposit</button>
-                    </form>
-                </div>
-            </div>
+        <style>
+            body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; margin: 0; color: #eaeaea; }
+            .ticker-wrap { width: 100%; overflow: hidden; background: #1e2329; color: #f0b90b; padding: 10px 0; border-bottom: 2px solid #f0b90b; }
+            .ticker { display: flex; white-space: nowrap; animation: ticker 40s linear infinite; }
+            .ticker-item { padding: 0 40px; font-size: 13px; font-weight: bold; }
+            @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
             
-             <div id="withdrawModal" class="modal">
-                <div class="modal-content">
-                    <span class="close-modal" onclick="closeModals()">&times;</span>
-                    <h3>Pay / Withdraw</h3>
-                    <form action="/withdraw" method="POST">
-                        <input type="number" name="amount" placeholder="Amount ($)" required>
-                        <input type="text" name="wallet" placeholder="Recipient" required>
-                        <button class="submit-btn" style="background:var(--accent-orange);">Send Payment</button>
+            .card { background: #181a20; padding: 25px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); max-width: 900px; margin: 20px auto; border: 1px solid #2b2f36; }
+            .agt-card { background: linear-gradient(135deg, #f0b90b 0%, #9a7807 100%); color: #000; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+            .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+            .box { padding: 15px; border-radius: 10px; text-align: center; background: #2b2f36; border: 1px solid #2b2f36; }
+            
+            .progress-fill { background: #f0b90b; height: 10px; border-radius: 5px; width: ${(user.activeRefsCount / 50) * 100}%; max-width: 100%; transition: 0.5s; }
+            .partner-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin-top: 20px; }
+            .partner-item { background: #fff; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; height: 45px; transition: 0.3s; }
+            
+            .contact-float { position: fixed; bottom: 20px; left: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 1000; }
+            .c-btn { padding: 10px 15px; border-radius: 30px; color: white; text-decoration: none; font-size: 12px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        </style>
+
+        <div class="ticker-wrap"><div class="ticker">
+            <div class="ticker-item">GOLD (XAU/USD): <span id="gp">...</span></div>
+            <div class="ticker-item">AGoldToken (AGT): COLLABORATION EAC • ECOWAS • EU</div>
+            <div class="ticker-item">BTC: <span id="bp">...</span></div>
+        </div></div>
+
+        <div class="card">
+            ${isAdmin ? `<a href="/admin-panel" style="background:#f0b90b; color:#000; padding:10px; border-radius:5px; text-decoration:none; font-weight:bold; display:inline-block; margin-bottom:20px;">🛠 MASTER ADMIN</a>` : ''}
+            
+            <div class="agt-card">
+                <h3 style="margin:0;">AGoldToken (AGT) Vault</h3>
+                <p style="font-size:12px;">Physical Gold-Backed Digital Asset. Price: $1.00/AGT</p>
+                <form action="/reserve-agt" method="POST" style="display:flex; gap:10px; margin-top:10px;">
+                    <input type="number" name="tokenAmount" placeholder="Amount" required style="flex:1; padding:10px; border-radius:5px; border:none;">
+                    <button type="submit" style="background:#000; color:#f0b90b; padding:0 20px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">RESERVE</button>
+                </form>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_the_East_African_Community.svg" height="15">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/d/df/Flag_of_ECOWAS.svg" height="15">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/Flag_of_Europe.svg" height="15">
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="box">Available<br><b>$${user.balance.toFixed(2)}</b></div>
+                <div class="box">AI Yield<br><b>$${user.lockedBonus.toFixed(2)}</b></div>
+                <div class="box">Vault (AGT)<br><b>${user.agtTokens}</b></div>
+                <div class="box">Active Refs<br><b>${user.activeRefsCount}/50</b></div>
+            </div>
+
+            <div style="background:#1e2329; padding:15px; border-radius:10px; border:1px solid #2b2f36;">
+                <h4 style="margin:0; color:#f0b90b;">$50 Promo Progress</h4>
+                <div style="background:#444; height:10px; border-radius:5px; margin:10px 0;"><div class="progress-fill"></div></div>
+                <small>Referral Link: <code>${refLink}</code></small>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
+                <div style="background:#1e2329; padding:15px; border-radius:10px;">
+                    <h4>Deposit</h4>
+                    <form action="/request-deposit" method="POST">
+                        <input type="number" name="amount" placeholder="Amount ($)" required style="width:100%; padding:8px; background:#0b0e11; border:1px solid #444; color: #eaeaea; border-radius: 5px; margin-bottom: 10px;">
+                        <button class="c-btn" style="background:#f0b90b; color:#000; border:none; width:100%; cursor:pointer;">REQUEST DEPOSIT</button>
+                    </form>
+                </div>
+
+                <div style="background:#1e2329; padding:15px; border-radius:10px;">
+                    <h4>Withdraw</h4>
+                     <form action="/withdraw" method="POST">
+                        <input type="number" name="amount" placeholder="Amount ($)" required style="width:100%; padding:8px; background:#0b0e11; border:1px solid #444; color: #eaeaea; border-radius: 5px; margin-bottom: 10px;">
+                        <input type="text" name="wallet" placeholder="USDT TRC20 Address" required style="width:100%; padding:8px; background:#0b0e11; border:1px solid #444; color: #eaeaea; border-radius: 5px; margin-bottom: 10px;">
+                        <button class="c-btn" style="background:#444; color:#fff; border:none; width:100%; cursor:pointer;">WITHDRAW FUNDS</button>
                     </form>
                 </div>
             </div>
 
-            <script>
-                const timeEl = document.querySelector('.time');
-                setInterval(() => { const now = new Date(); timeEl.innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }, 1000);
-                function openModal(type) {
-                    if(type === 'deposit') document.getElementById('depositModal').style.display = 'flex';
-                    if(type === 'withdraw' || type === 'transfer') document.getElementById('withdrawModal').style.display = 'flex';
-                }
-                function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
-                window.onclick = function(event) { if (event.target.classList.contains('modal')) closeModals(); }
-            </script>
-        </body>
-        </html>
+            <h3 style="margin-top:30px;">Recent Activity</h3>
+            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                <tr style="background:#2b2f36; text-align:left;">
+                    <th style="padding:10px;">Type</th>
+                    <th style="padding:10px;">Amount</th>
+                    <th style="padding:10px;">Status/Date</th>
+                </tr>
+                ${user.pendingDeposits.map(d => `
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36; color:#f0b90b;">Pending Deposit</td>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36;">$${d.amount}</td>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36;">${d.status}</td>
+                    </tr>
+                `).join('')}
+                ${user.transactions.slice().reverse().map(t => `
+                    <tr>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36;">${t.type}</td>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36;">$${t.amount}</td>
+                        <td style="padding:10px; border-bottom:1px solid #2b2f36;">${t.date.toDateString()}</td>
+                    </tr>
+                `).join('')}
+            </table>
+            
+            <div class="partner-grid">
+                <div class="partner-item"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" height="25"></div>
+                <div class="partner-item"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" height="25"></div>
+                <div class="partner-item"><img src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" height="25"></div>
+            </div>
+
+            <div class="contact-float">
+                <a href="#" class="c-btn" style="background:#25D366;">WhatsApp Help</a>
+                <a href="/logout" class="c-btn" style="background:#ff4757;">Logout</a>
+            </div>
+        </div>
+
+        <script>
+            // Live Mock Prices
+            setInterval(() => {
+                document.getElementById('gp').innerText = '$' + (2650 + Math.random() * 5).toFixed(2);
+                document.getElementById('bp').innerText = '$' + (98000 + Math.random() * 100).toFixed(2);
+            }, 3000);
+        </script>
     `);
 });
 
-// --- 4. ACTION ROUTES ---
-app.post('/request-deposit', (req, res) => {
+// --- 4. FUNCTIONAL ROUTES ---
+
+// Handle Deposit Requests
+app.post('/request-deposit', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    const user = findUser(req.session.userId);
-    const amount = parseFloat(req.body.amount);
-    if(user && amount > 0) {
-        user.balance += amount;
-        user.transactions.push({ type: "Deposit", amount: amount, date: new Date() });
-    }
-    res.redirect('/dashboard');
+    try {
+        const amount = parseFloat(req.body.amount);
+        if (amount > 0) {
+            await User.findByIdAndUpdate(req.session.userId, {
+                $push: { pendingDeposits: { amount: amount, status: 'Pending Review' } }
+            });
+            // Optional: Notify Admin via Email here
+        }
+        res.redirect('/dashboard');
+    } catch (e) { console.log(e); res.redirect('/dashboard'); }
 });
 
-app.post('/withdraw', (req, res) => {
+// Handle AGT Token Reservation
+app.post('/reserve-agt', async (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    const user = findUser(req.session.userId);
-    const amount = parseFloat(req.body.amount);
-    if(user && user.balance >= amount) {
-        user.balance -= amount;
-        user.transactions.push({ type: "Withdrawal", amount: amount, date: new Date() });
-    }
-    res.redirect('/dashboard');
+    try {
+        const user = await User.findById(req.session.userId);
+        const amount = parseFloat(req.body.tokenAmount);
+        const cost = amount * 1.00; // $1 per token
+
+        if (user.balance >= cost) {
+            user.balance -= cost;
+            user.agtTokens += amount;
+            user.transactions.push({ type: 'AGT Purchase', amount: cost });
+            await user.save();
+        }
+        res.redirect('/dashboard');
+    } catch (e) { console.log(e); res.redirect('/dashboard'); }
 });
 
-// --- 5. AUTHENTICATION (Simplified) ---
+// Handle Withdrawals
+app.post('/withdraw', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/');
+    // Logic: Deduct balance immediately or create a pending withdrawal request
+    // For safety, we usually create a pending request.
+    try {
+        const user = await User.findById(req.session.userId);
+        const amount = parseFloat(req.body.amount);
+        if(user.balance >= amount) {
+             user.balance -= amount;
+             user.transactions.push({ type: 'Withdrawal Request', amount: amount });
+             await user.save();
+             // Send email to admin about withdrawal
+        }
+        res.redirect('/dashboard');
+    } catch(e) { console.log(e); res.redirect('/dashboard'); }
+});
+
+// --- 5. ADMIN PANEL ---
+app.get('/admin-panel', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/');
+    const user = await User.findById(req.session.userId);
+    // Strict Admin Check
+    if (user.email !== "emmanuel.iyere84@gmail.com") return res.send("Access Denied");
+
+    const allUsers = await User.find({});
+    
+    // Simple Admin HTML
+    let html = `
+    <body style="font-family:sans-serif; padding:20px; background:#eee;">
+        <h1>Master Admin Panel</h1>
+        <p>Total Users: ${allUsers.length}</p>
+        <table border="1" cellpadding="10" style="border-collapse:collapse; background:#fff; width:100%;">
+            <tr><th>Email</th><th>Balance</th><th>Pending Deposits</th><th>Action</th></tr>
+            ${allUsers.map(u => {
+                const pending = u.pendingDeposits.filter(d => d.status === 'Pending Review');
+                return pending.map(p => `
+                    <tr>
+                        <td>${u.email}</td>
+                        <td>$${u.balance}</td>
+                        <td>$${p.amount}</td>
+                        <td>
+                            <form action="/admin/approve-deposit" method="POST">
+                                <input type="hidden" name="userId" value="${u._id}">
+                                <input type="hidden" name="depositId" value="${p._id}">
+                                <input type="password" name="masterKey" placeholder="Master Key" required>
+                                <button type="submit" style="background:green; color:white;">Approve</button>
+                            </form>
+                        </td>
+                    </tr>
+                `).join('');
+            }).join('')}
+        </table>
+        <br><a href="/dashboard">Back to Dashboard</a>
+    </body>`;
+    res.send(html);
+});
+
+// Admin Action: Approve Deposit
+app.post('/admin/approve-deposit', async (req, res) => {
+    const { userId, depositId, masterKey } = req.body;
+    if (masterKey !== MASTER_KEY) return res.send("Invalid Master Key");
+
+    try {
+        const user = await User.findById(userId);
+        const deposit = user.pendingDeposits.id(depositId);
+        
+        if (deposit && deposit.status === 'Pending Review') {
+            deposit.status = 'Completed';
+            user.balance += deposit.amount;
+            user.transactions.push({ type: 'Deposit', amount: deposit.amount });
+            await user.save();
+            await sendEmail(user.email, "Deposit Approved", `Your deposit of $${deposit.amount} has been credited.`);
+        }
+        res.redirect('/admin-panel');
+    } catch (e) { res.send(e.message); }
+});
+
+// --- 6. AUTH ROUTES (Login/Register/Logout) ---
 app.get('/', (req, res) => {
     res.send(`
         <body style="background:#0b0e11; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
             <div style="text-align:center;">
-                <h1 style="color:#f0b90b;">BlezzyPay</h1>
-                <p style="color:#888;">Demo Login: admin@test.com / 123</p>
+                <h1 style="color:#f0b90b;">BlezzyPay Finance</h1>
                 <form action="/login" method="POST" style="display:flex; flex-direction:column; gap:10px; width:300px;">
-                    <input type="email" name="email" value="admin@test.com" required style="padding:10px;">
-                    <input type="password" name="password" value="123" required style="padding:10px;">
+                    <input type="email" name="email" placeholder="Email" required style="padding:10px;">
+                    <input type="password" name="password" placeholder="Password" required style="padding:10px;">
                     <button type="submit" style="padding:10px; background:#f0b90b; border:none; font-weight:bold;">LOGIN</button>
+                </form>
+                <br>
+                <form action="/register" method="POST" style="display:flex; flex-direction:column; gap:10px; width:300px;">
+                    <input type="email" name="email" placeholder="New Email" required style="padding:10px;">
+                    <input type="password" name="password" placeholder="New Password" required style="padding:10px;">
+                    <button type="submit" style="padding:10px; background:#444; color:#fff; border:none;">REGISTER</button>
                 </form>
             </div>
         </body>
     `);
 });
 
-// LOGIN LOGIC - PLAIN TEXT CHECK
-app.post('/login', (req, res) => {
-    const user = findUserByEmail(req.body.email);
-    
-    // DIRECT COMPARISON (No "bcrypt.compare" so it cannot fail)
-    if (user && user.password === req.body.password) {
-        req.session.userId = user.id;
+app.post('/register', async (req, res) => {
+    try {
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        const user = await User.create({ email: req.body.email, password: hashedPassword });
+        req.session.userId = user._id;
+        res.redirect('/dashboard');
+    } catch (e) { res.send("Error: Email likely exists."); }
+});
+
+app.post('/login', async (req, res) => {
+    const user = await User.findOne({ email: req.body.email });
+    if (user && await bcrypt.compare(req.body.password, user.password)) {
+        req.session.userId = user._id;
         res.redirect('/dashboard');
     } else {
         res.send("Invalid credentials <a href='/'>Try Again</a>");
@@ -242,6 +339,12 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// --- START SERVER ---
+// --- 7. SERVER START ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/blezzyDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log("MongoDB Connected");
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}).catch(err => console.log(err));
