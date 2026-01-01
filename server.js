@@ -60,12 +60,12 @@ const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === 
 // Login Page
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.3);color:#333}
-    input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
+    body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:#1c2026;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333}
+    input{width:100%;padding:15px;margin:10px 0;background:#0b0e11;border:1px solid #333;color:white;border-radius:8px;box-sizing:border-box}
     button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:#000}
-    a{color:#ad1457;text-decoration:none;font-size:12px;margin-top:15px;display:block;font-weight:bold}
-    </style></head><body><div class="box"><h2 style="color:#ad1457">BlezzyPay</h2>
+    a{color:#f0b90b;text-decoration:none;font-size:12px;margin-top:15px;display:block;font-weight:bold}
+    </style></head><body><div class="box"><h2 style="color:#f0b90b">BlezzyPay</h2>
     <form action="/login" method="POST">
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="passcode" placeholder="Passcode" required>
@@ -78,11 +78,11 @@ app.get('/', (req, res) => {
 // Sign Up Page
 app.get('/signup', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
-    .box{background:white;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.3);color:#333}
-    input{width:100%;padding:15px;margin:10px 0;background:#fff;border:1px solid #ccc;color:#333;border-radius:8px;box-sizing:border-box}
-    button{width:100%;padding:15px;background:#333;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:white}
-    a{color:#666;text-decoration:none;font-size:12px;margin-top:15px;display:block}
+    body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .box{background:#1c2026;padding:40px;border-radius:20px;text-align:center;width:100%;max-width:350px;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333}
+    input{width:100%;padding:15px;margin:10px 0;background:#0b0e11;border:1px solid #333;color:white;border-radius:8px;box-sizing:border-box}
+    button{width:100%;padding:15px;background:#f0b90b;border:none;font-weight:bold;border-radius:8px;cursor:pointer;margin-top:10px;color:black}
+    a{color:#888;text-decoration:none;font-size:12px;margin-top:15px;display:block}
     </style></head><body><div class="box"><h2>New Account</h2>
     <form action="/register" method="POST">
         <input type="text" name="name" placeholder="Full Name" required>
@@ -133,27 +133,27 @@ app.get('/dashboard', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;margin:0;padding-bottom:100px}
-        .tick{background:rgba(0,0,0,0.3);color:white;padding:10px;border-bottom:1px solid rgba(255,255,255,0.1);white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
+        body{background:#0f1216;color:white;font-family:sans-serif;margin:0;padding-bottom:100px}
+        .tick{background:#16191f;color:white;padding:10px;border-bottom:1px solid #222;white-space:nowrap;overflow:hidden;font-size:12px;font-weight:bold}
         .con{padding:20px;max-width:480px;margin:0 auto}
-        .card{background:white;color:#333;padding:25px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);border:none}
-        .btn{width:48%;padding:15px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-        .btn-y{background:#f0b90b;color:#000} .btn-g{background:#fff;color:#333;border:1px solid #ddd}
+        .card{background:linear-gradient(135deg, #2b323b 0%, #1c2026 100%);color:white;padding:25px;border-radius:20px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333}
+        .btn{width:48%;padding:15px;border-radius:12px;border:none;font-weight:bold;cursor:pointer;}
+        .btn-y{background:#f0b90b;color:#000} .btn-g{background:#2c333e;color:white;border:1px solid #333}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
-        .stat{background:white;color:#333;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+        .stat{background:#1c2026;color:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;border:1px solid #333}
         
-        .logo-wrap{background:white;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:none; text-align:center;}
-        .logo{height:45px;margin:0 25px;opacity:0.9;vertical-align:middle;transition:0.3s} 
+        .logo-wrap{background:black;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #222; text-align:center;}
+        .logo{height:45px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s; filter:brightness(0) invert(1);} 
         .logo:hover{opacity:1;transform:scale(1.1)}
 
-        .tx-item{background:white;color:#333;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+        .tx-item{background:#181b21;color:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border:1px solid #222}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
-        .m-con{background:white;color:#333;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;box-shadow:0 -5px 20px rgba(0,0,0,0.2)}
-        input,select{width:100%;padding:15px;background:#f9f9f9;border:1px solid #ddd;color:#333;margin:10px 0;border-radius:8px;box-sizing:border-box}
+        .m-con{background:#1c2026;color:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;border-top:1px solid #333}
+        input,select{width:100%;padding:15px;background:#0b0e11;border:1px solid #333;color:white;margin:10px 0;border-radius:8px;box-sizing:border-box}
         .top-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
         .set-btn{color:white;font-size:20px;text-decoration:none}
-        .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:rgba(255,255,255,0.2); color:white; vertical-align:middle; border:1px solid rgba(255,255,255,0.4)}
-        .verified{background:#00c853; border-color:#00c853; font-weight:bold}
+        .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:#333; color:#aaa; vertical-align:middle;}
+        .verified{background:rgba(0, 200, 83, 0.2); color:#00c853; font-weight:bold}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
@@ -162,22 +162,22 @@ app.get('/dashboard', (req, res) => {
                 <h3 style="margin:0">Hi ${u.name.split(' ')[0]} 
                     <span class="kyc-badge ${u.kycStatus === 'Verified' ? 'verified' : ''}">${u.kycStatus}</span>
                 </h3>
-                <p style="margin:5px 0 0 0;font-size:12px;color:rgba(255,255,255,0.7)">BlezzyPay Premier</p>
+                <p style="margin:5px 0 0 0;font-size:12px;color:#888">BlezzyPay Premier</p>
             </div>
             <div>
                 <a href="/settings" class="set-btn" style="margin-right:15px"><i class="fa-solid fa-gear"></i></a>
-                <a href="/logout" style="color:white;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
+                <a href="/logout" style="color:#ff4757;text-decoration:none;font-weight:bold"><i class="fa-solid fa-power-off"></i></a>
             </div>
         </div>
 
-        ${u.pendingDeposit ? `<div style="background:rgba(255,255,255,0.9);padding:15px;border-radius:10px;margin-bottom:20px;color:#856404;border:1px solid #ffeeba"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:#856404;font-weight:bold">PAY NOW</a></div>` : ''}
+        ${u.pendingDeposit ? `<div style="background:#e67e22;padding:15px;border-radius:10px;margin-bottom:20px;color:black;"><b>Pending: $${u.pendingDeposit.amount}</b> <a href="/pay-now" style="color:white;font-weight:bold;margin-left:10px">PAY NOW</a></div>` : ''}
         
         <div class="card">
-            <div style="color:#666;font-size:12px">Total Assets</div>
-            <div style="font-size:32px;font-weight:bold;color:#333">$${(u.balance+u.lockedCapital+u.lockedProfit).toFixed(2)}</div>
-            <div class="row" style="margin-top:20px;border-top:1px solid #eee;padding-top:10px">
-                <div><small style="color:#666">CASH</small><br><b style="color:#00c853">$${u.balance.toFixed(2)}</b></div>
-                <div style="text-align:right"><small style="color:#666">LOCKED</small><br><b style="color:#333">$${u.lockedCapital.toFixed(2)}</b></div>
+            <div style="color:#888;font-size:12px">Total Assets</div>
+            <div style="font-size:32px;font-weight:bold;color:white">$${(u.balance+u.lockedCapital+u.lockedProfit).toFixed(2)}</div>
+            <div class="row" style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.1);padding-top:10px">
+                <div><small style="color:#888">CASH</small><br><b style="color:#00c853">$${u.balance.toFixed(2)}</b></div>
+                <div style="text-align:right"><small style="color:#888">LOCKED</small><br><b style="color:white">$${u.lockedCapital.toFixed(2)}</b></div>
             </div>
         </div>
 
@@ -187,16 +187,16 @@ app.get('/dashboard', (req, res) => {
         </div>
 
         <div class="row">
-            <div class="stat"><small style="color:#666">Pending Yield</small><br><b style="color:#f0b90b">$${u.lockedProfit}</b><br><small style="font-size:9px;color:#999">Releases in 30 Days</small></div>
-            <div class="stat"><small style="color:#666">Earned</small><br><b style="color:#00c853">$${u.balance}</b></div>
+            <div class="stat"><small style="color:#888">Pending Yield</small><br><b style="color:#f0b90b">$${u.lockedProfit}</b><br><small style="font-size:9px;color:#666">Releases in 30 Days</small></div>
+            <div class="stat"><small style="color:#888">Earned</small><br><b style="color:#00c853">$${u.balance}</b></div>
         </div>
 
         <h3>History</h3>
-        ${u.transactions.length === 0 ? '<p style="color:rgba(255,255,255,0.6);font-size:12px">No transactions yet.</p>' : ''}
-        ${u.transactions.slice().reverse().map(t => `<div class="tx-item"><div><b>${t.type}</b><br><small style="color:#666">${t.details||t.date}</small></div><b>$${t.amount}</b></div>`).join('')}
+        ${u.transactions.length === 0 ? '<p style="color:#666;font-size:12px">No transactions yet.</p>' : ''}
+        ${u.transactions.slice().reverse().map(t => `<div class="tx-item"><div><b>${t.type}</b><br><small style="color:#888">${t.details||t.date}</small></div><b>$${t.amount}</b></div>`).join('')}
     </div>
 
-    <div style="text-align:center;font-size:10px;color:#666;text-transform:uppercase;font-weight:bold;background:white;padding-top:20px;margin-top:20px;border-radius:20px 20px 0 0">Trusted Partners</div>
+    <div style="text-align:center;font-size:10px;color:#666;text-transform:uppercase;font-weight:bold;background:black;padding-top:20px;margin-top:20px;border-top:1px solid #222">Trusted Partners</div>
     <div class="logo-wrap">
         ${logos}
     </div>
@@ -204,7 +204,7 @@ app.get('/dashboard', (req, res) => {
     <div id="dep" class="modal"><div class="m-con">
         <h3>Deposit (Locked 30 Days)</h3><form action="/dep" method="POST">
         <input type="number" name="amount" placeholder="Amount" required><button class="btn btn-y" style="width:100%">PROCEED</button></form>
-        <br><button onclick="closeM()" style="background:none;border:none;color:#666;cursor:pointer">Close</button>
+        <br><button onclick="closeM()" style="background:none;border:none;color:#888;cursor:pointer">Close</button>
     </div></div>
 
     <div id="with" class="modal"><div class="m-con">
@@ -213,7 +213,7 @@ app.get('/dashboard', (req, res) => {
         <select name="type"><option value="std">Standard (48h) - Free</option><option value="inst">Instant - 3% Fee</option></select>
         <input placeholder="Bank Name" required><input placeholder="Account No" required>
         <button class="btn btn-y" style="width:100%">SUBMIT</button></form>
-        <br><button onclick="closeM()" style="background:none;border:none;color:#666;cursor:pointer">Close</button>
+        <br><button onclick="closeM()" style="background:none;border:none;color:#888;cursor:pointer">Close</button>
     </div></div>
 
     <script>
@@ -231,13 +231,13 @@ app.get('/settings', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;margin:0;padding:20px}
+        body{background:#0f1216;color:white;font-family:sans-serif;margin:0;padding:20px}
         .con{max-width:480px;margin:0 auto}
-        .card{background:white;color:#333;padding:25px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.2);margin-bottom:20px}
+        .card{background:#1c2026;color:white;padding:25px;border-radius:20px;box-shadow:0 4px 15px rgba(0,0,0,0.5);margin-bottom:20px;border:1px solid #333}
         .label{font-size:12px;color:#888;margin-bottom:5px;display:block}
-        .val{font-size:16px;font-weight:bold;margin-bottom:15px;display:block;border-bottom:1px solid #eee;padding-bottom:10px}
-        .btn-close{width:100%;padding:15px;background:#ffebee;color:#d32f2f;border:none;font-weight:bold;border-radius:12px;cursor:pointer}
-        .btn-kyc{width:100%;padding:15px;background:#2c333e;color:white;border:none;font-weight:bold;border-radius:12px;cursor:pointer;margin-bottom:10px}
+        .val{font-size:16px;font-weight:bold;margin-bottom:15px;display:block;border-bottom:1px solid #333;padding-bottom:10px}
+        .btn-close{width:100%;padding:15px;background:rgba(255, 71, 87, 0.1);color:#ff4757;border:none;font-weight:bold;border-radius:12px;cursor:pointer}
+        .btn-kyc{width:100%;padding:15px;background:#f0b90b;color:black;border:none;font-weight:bold;border-radius:12px;cursor:pointer;margin-bottom:10px}
     </style></head><body>
     <div class="con">
         <a href="/dashboard" style="color:white;text-decoration:none;font-weight:bold;margin-bottom:20px;display:block"><i class="fa-solid fa-arrow-left"></i> Back</a>
@@ -250,7 +250,7 @@ app.get('/settings', (req, res) => {
             <span class="label">Home Address</span><span class="val">${u.address}</span> 
             
             <span class="label">KYC Status</span>
-            <span class="val" style="color:${u.kycStatus==='Verified'?'green':'orange'}">${u.kycStatus}</span>
+            <span class="val" style="color:${u.kycStatus==='Verified'?'#00c853':'#f0b90b'}">${u.kycStatus}</span>
             
             ${u.kycStatus === 'Unverified' ? `<form action="/kyc-page"><button class="btn-kyc">VERIFY IDENTITY (KYC)</button></form>` : ''}
         </div>
@@ -263,21 +263,22 @@ app.get('/settings', (req, res) => {
 
 app.get('/kyc-page', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-    body{background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;padding:20px;text-align:center}
-    .box{background:white;color:#333;padding:30px;border-radius:20px;max-width:400px;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.3)}
-    input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px}
+    body{background:#0f1216;color:white;font-family:sans-serif;padding:20px;text-align:center}
+    .box{background:#1c2026;color:white;padding:30px;border-radius:20px;max-width:400px;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333}
+    input{width:100%;padding:10px;margin:10px 0;background:#0b0e11;border:1px solid #333;color:white;border-radius:5px}
     button{width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
+    select{width:100%;padding:10px;margin-bottom:10px;background:#0b0e11;border:1px solid #333;color:white;border-radius:5px}
     </style></head><body>
     <div class="box">
         <h2>KYC Verification</h2>
-        <p style="color:#666">Upload your ID or Passport to verify your account.</p>
+        <p style="color:#888">Upload your ID or Passport to verify your account.</p>
         <form action="/submit-kyc" method="POST">
             <label style="display:block;text-align:left;font-size:12px;color:#888">Document Type</label>
-            <select style="width:100%;padding:10px;margin-bottom:10px"><option>Passport</option><option>National ID</option></select>
-            <div style="border:2px dashed #ccc;padding:30px;margin-bottom:20px;color:#999">Click to Upload Image</div>
+            <select><option>Passport</option><option>National ID</option></select>
+            <div style="border:2px dashed #333;padding:30px;margin-bottom:20px;color:#666">Click to Upload Image</div>
             <button>SUBMIT DOCUMENTS</button>
         </form>
-        <a href="/settings" style="display:block;margin-top:20px;color:#666;text-decoration:none">Cancel</a>
+        <a href="/settings" style="display:block;margin-top:20px;color:#888;text-decoration:none">Cancel</a>
     </div></body></html>`);
 });
 
@@ -304,9 +305,9 @@ app.post('/dep', (req, res) => {
 app.get('/pay-now', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u.pendingDeposit) return res.redirect('/dashboard');
-    res.send(`<body style="background:linear-gradient(135deg, #ad1457, #880e4f);color:white;font-family:sans-serif;padding:20px;text-align:center">
-    <h1 style="color:#fff">$${u.pendingDeposit.amount}</h1>
-    <div style="background:white;color:#333;padding:20px;margin:10px auto;max-width:400px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+    res.send(`<body style="background:#0f1216;color:white;font-family:sans-serif;padding:20px;text-align:center">
+    <h1 style="color:#f0b90b">$${u.pendingDeposit.amount}</h1>
+    <div style="background:#1c2026;color:white;padding:20px;margin:10px auto;max-width:400px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333">
     <b>US:</b> Bank of America | 026009593<br><br><b>EU:</b> Barclay | GB33BARC20658259151311<br><br><b>Bitcoin:</b> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
     </div>
     <form action="/sent" method="POST"><button style="padding:15px;width:100%;max-width:400px;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px;margin-top:10px">I SENT PAYMENT</button></form>
@@ -331,12 +332,12 @@ app.get('/admin', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u || !u.isAdmin) return res.redirect('/');
     const pending = users.filter(x => x.pendingDeposit && x.pendingDeposit.status === "Pending");
-    res.send(`<body style="background:#ad1457;color:white;padding:20px;font-family:sans-serif">
+    res.send(`<body style="background:#0f1216;color:white;padding:20px;font-family:sans-serif">
     <h1>Admin</h1>
-    <form action="/release" method="POST"><button style="padding:10px;background:white;color:#ad1457;font-weight:bold;cursor:pointer">⚡ PROCESS 30-DAY PAYOUTS</button></form>
-    <hr style="border-color:rgba(255,255,255,0.2)">
-    ${pending.map(x => `<div style="background:rgba(255,255,255,0.1);padding:10px;margin-bottom:5px"><b>${x.email}</b> claims $${x.pendingDeposit.amount} 
-    <form action="/confirm" method="POST" style="display:inline"><input type="hidden" name="uid" value="${x.id}"><button style="color:black">CONFIRM</button></form></div>`).join('')}
+    <form action="/release" method="POST"><button style="padding:10px;background:#f0b90b;color:black;font-weight:bold;cursor:pointer;border:none;border-radius:5px">⚡ PROCESS 30-DAY PAYOUTS</button></form>
+    <hr style="border-color:#333">
+    ${pending.map(x => `<div style="background:#1c2026;padding:10px;margin-bottom:5px;border:1px solid #333"><b>${x.email}</b> claims $${x.pendingDeposit.amount} 
+    <form action="/confirm" method="POST" style="display:inline"><input type="hidden" name="uid" value="${x.id}"><button style="background:#00c853;color:white;border:none;padding:5px 10px;cursor:pointer;border-radius:5px;margin-left:10px">CONFIRM</button></form></div>`).join('')}
     </body>`);
 });
 
