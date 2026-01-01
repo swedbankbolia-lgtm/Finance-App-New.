@@ -12,69 +12,69 @@ app.use(session({
 }));
 
 // ==========================================
-//  🟢 PARTNER LOGO CONFIGURATION (EDIT HERE)
+//  🟢 PARTNER LOGOS (Direct Wiki Links)
+//  These links point directly to Wikimedia.
 // ==========================================
-// Paste your GitHub Raw Image Links inside the quotes below.
 const partners = [
     { 
         name: "Standard Chartered", 
         link: "https://www.sc.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Standard_Chartered.svg" 
     },
     { 
         name: "Bank of America", 
         link: "https://www.bankofamerica.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Bank_of_America_logo.svg" 
     },
     { 
         name: "BNY Mellon", 
         link: "https://www.bnymellon.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/f/f4/BNY_Mellon_logo.svg" 
     },
     { 
         name: "Citibank", 
         link: "https://www.citigroup.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" 
     },
     { 
         name: "BNP Paribas", 
         link: "https://mabanque.bnpparibas", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/1/12/BNP_Paribas.svg" 
     },
     { 
         name: "Morgan Stanley", 
         link: "https://www.morganstanley.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" 
     },
     { 
         name: "JPMorgan Chase", 
         link: "https://www.jpmorganchase.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/JPMorgan_Chase_logo_2008.svg" 
     },
     { 
         name: "Goldman Sachs", 
         link: "https://www.goldmansachs.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/c/cc/Goldman_Sachs.svg" 
     },
     { 
         name: "MUFG", 
         link: "https://www.mufg.jp", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/a/a2/MUFG_logo.svg" 
     },
     { 
         name: "Investec", 
         link: "https://www.investec.com", 
-        img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Investec_Bank_Logo.svg/1200px-Investec_Bank_Logo.svg.png" 
     },
     { 
         name: "Revolut", 
         link: "https://www.revolut.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Revolut_logo.svg" 
     },
     { 
         name: "Bunq", 
         link: "https://www.bunq.com", 
-        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/bc/Bunq_logo.svg/2560px-Bunq_logo.svg.png" // REPLACE THIS LINK
+        img: "https://upload.wikimedia.org/wikipedia/commons/c/bc/Bunq_logo.svg" 
     }
 ];
 
@@ -201,7 +201,7 @@ app.get('/dashboard', (req, res) => {
                 height: 40px; 
                 width: auto;
                 margin: 0 30px; 
-                /* Ensures logos are white on dark background */
+                /* MAGIC FILTER: TURNS BLACK LOGOS WHITE */
                 filter: brightness(0) invert(1); 
                 opacity: 0.7; 
                 transition: 0.3s; 
@@ -400,163 +400,3 @@ app.post('/initiate-deposit', (req, res) => {
 });
 
 // WITHDRAWAL LOGIC (Instant 3% vs Standard Free)
-app.post('/withdraw', (req, res) => {
-    if (!req.session.userId) return res.redirect('/');
-    const user = findUser(req.session.userId);
-    const amount = parseFloat(req.body.amount);
-    const type = req.body.payoutType; 
-    
-    // Fee Logic
-    let fee = 0;
-    let typeLabel = "Standard Withdrawal (48h)";
-    
-    if (type === 'instant') {
-        fee = amount * 0.03; // 3%
-        typeLabel = "Instant Withdrawal";
-    }
-
-    const net = amount - fee;
-
-    // Check Available Balance
-    if (amount > 0 && user.balance >= amount) {
-        user.balance -= amount; // Deduct FULL Amount
-        
-        console.log("--- WITHDRAWAL REQUEST ---");
-        console.log(`User: ${user.email}`);
-        console.log(`Type: ${typeLabel}`);
-        console.log(`Request: $${amount}`);
-        console.log(`Fee: $${fee}`);
-        console.log(`Net Sent: $${net}`);
-        
-        user.transactions.push({ 
-            type: typeLabel, 
-            amount: -amount, 
-            date: new Date().toLocaleDateString(),
-            details: `Fee: $${fee.toFixed(2)} | Net: $${net.toFixed(2)}`
-        });
-    }
-    res.redirect('/dashboard');
-});
-
-app.get('/pay-now', (req, res) => {
-    if (!req.session.userId) return res.redirect('/');
-    const user = findUser(req.session.userId);
-    if (!user.pendingDeposit) return res.redirect('/dashboard');
-    res.send(`
-        <!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>body{background:#0f1216;color:white;font-family:sans-serif;padding:20px}
-        .box{background:#1c2026;padding:15px;border-radius:12px;margin-bottom:10px;border:1px solid #333;font-size:14px}
-        .hl{color:#f0b90b;font-weight:bold;display:block;margin-bottom:4px;font-size:12px;text-transform:uppercase}
-        h1{color:#f0b90b;text-align:center}</style></head><body>
-        <div style="max-width:500px;margin:0 auto">
-            <h1 style="text-align:center">$${user.pendingDeposit.amount}</h1>
-            <div class="box"><span class="hl">US Bank</span>Bank of America | 026009593</div>
-            <div class="box"><span class="hl">EU Bank</span>Barclay | GB33BARC20658259151311 | Ref: infogloirebanco</div>
-            <div class="box"><span class="hl">Uganda</span>Equity Bank | 1003103498481 | Ref: Annet</div>
-            <div class="box"><span class="hl">South Africa</span>Capitek | 1882242481 | Ref: BlezzyPay</div>
-            <div class="box"><span class="hl">Bitcoin</span>bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7</div>
-            <form action="/confirm-payment-sent" method="POST">
-                <button style="width:100%;padding:15px;background:#00c853;color:white;border:none;border-radius:10px;font-weight:bold;margin-top:20px">I SENT PAYMENT</button>
-            </form>
-            <div style="text-align:center;margin-top:20px"><a href="/cancel-deposit" style="color:#ff4757;text-decoration:none">Cancel</a></div>
-        </div></body></html>
-    `);
-});
-
-app.post('/confirm-payment-sent', (req, res) => {
-    const user = findUser(req.session.userId);
-    if(user.pendingDeposit) user.pendingDeposit.status = "Pending Admin";
-    res.redirect('/dashboard');
-});
-
-app.get('/cancel-deposit', (req, res) => {
-    findUser(req.session.userId).pendingDeposit = null;
-    res.redirect('/dashboard');
-});
-
-// --- 6. ADMIN ---
-app.get('/admin', (req, res) => {
-    if (!req.session.userId) return res.redirect('/');
-    const admin = findUser(req.session.userId);
-    if (!admin.isAdmin) return res.send("Access Denied");
-    const pending = users.filter(u => u.pendingDeposit && u.pendingDeposit.status === "Pending Admin");
-
-    res.send(`
-        <body style="font-family:sans-serif;padding:20px;background:#eee">
-            <h1>Admin Panel</h1>
-            <div style="margin-bottom:20px; padding:15px; background:white; border-left:5px solid #000;">
-                <h3>Date Controls</h3>
-                <form action="/admin/trigger-payout" method="POST">
-                    <button style="background:black; color:#f0b90b; padding:10px 20px; border:none; cursor:pointer; font-weight:bold;">⚡ PROCESS DAY 30 RELEASE</button>
-                    <p style="font-size:12px; color:#666;">Moves "Pending Yield" to "Available Cash" for users.</p>
-                </form>
-            </div>
-            <h3>Pending Deposits</h3>
-            ${pending.length === 0 ? "No pending deposits." : ""}
-            ${pending.map(u => `
-                <div style="background:white;padding:20px;margin-bottom:10px;border-left:5px solid #f0b90b">
-                    User: ${u.email} claims <strong>$${u.pendingDeposit.amount}</strong>
-                    <form action="/admin/confirm" method="POST" style="margin-top:10px">
-                        <input type="hidden" name="uid" value="${u.id}">
-                        <button style="background:green;color:white;border:none;padding:10px;cursor:pointer">CONFIRM DEPOSIT</button>
-                    </form>
-                </div>
-            `).join('')}
-            <br><a href="/logout">Logout</a>
-        </body>
-    `);
-});
-
-app.post('/admin/confirm', (req, res) => {
-    const admin = findUser(req.session.userId);
-    if (!admin.isAdmin) return res.redirect('/');
-    const u = findUser(req.body.uid);
-    if (u && u.pendingDeposit) {
-        const amt = u.pendingDeposit.amount;
-        const profit = amt * 0.20; 
-        
-        u.lockedCapital += amt; // Capital Locked
-        u.lockedProfit += profit; // 20% Profit Locked (Waiting for 30 days)
-        u.agtTokens += amt;
-        
-        // Calculate Maturity Date (30 days from now)
-        const mat = new Date();
-        mat.setDate(mat.getDate() + 30);
-        u.maturityDate = mat.toLocaleDateString();
-
-        u.transactions.push({ type: "Vault Deposit", amount: amt, date: new Date().toLocaleDateString(), details: "Locked Capital" });
-        u.transactions.push({ type: "20% Yield (Pending)", amount: profit, date: new Date().toLocaleDateString(), details: `Unlocks ${u.maturityDate}` });
-        u.pendingDeposit = null;
-        
-        // Receipt
-        const doc = new PDFDocument();
-        console.log(`Sending Receipt to ${u.email}`);
-        doc.text(`Deposit Confirmed: $${amt}. $${profit} profit locked for 30 days.`);
-        doc.end();
-    }
-    res.redirect('/admin');
-});
-
-// Admin Day 30 Trigger
-app.post('/admin/trigger-payout', (req, res) => {
-    const admin = findUser(req.session.userId);
-    if (!admin.isAdmin) return res.redirect('/');
-    
-    users.forEach(u => {
-        if(!u.isAdmin && u.lockedProfit > 0) {
-            const pay = u.lockedProfit;
-            u.balance += pay; // Move Locked Profit to Available Cash
-            u.lockedProfit = 0; // Reset Locked Profit
-            u.transactions.push({ type: "Maturity Payout", amount: pay, date: new Date().toLocaleDateString(), details: "Moved to Cash" });
-        }
-    });
-    res.redirect('/admin');
-});
-
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
