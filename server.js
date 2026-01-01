@@ -1,57 +1,54 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const session = require('express-session');
-const nodemailer = require('nodemailer');
-
-// --- 1. INITIALIZE APP (This fixes your error) ---
+const bcrypt = require('bcryptjs');
 const app = express();
 
+// --- CONFIGURATION ---
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public')); // serves static files if you have them
 app.use(session({ 
-    secret: process.env.SESSION_SECRET || 'blezzy_pay_gold_2026', 
+    secret: 'blezzy_secret_key_2026', 
     resave: false, 
     saveUninitialized: true 
 }));
 
-// --- 2. EMAIL SYSTEM ---
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-});
+// --- IN-MEMORY DATABASE (No MongoDB required) ---
+// This ensures the app works immediately on Render without crashing.
+const users = [];
 
-const sendEmail = async (to, subject, text) => {
-    try {
-        await transporter.sendMail({
-            from: `"BlezzyPay Finance" <${process.env.EMAIL_USER}>`,
-            to: to, subject: subject, text: text
-        });
-    } catch (err) { console.log("Mail Error:", err); }
-};
+// Create a default admin user instantly
+// Email: admin@test.com
+// Password: 123
+(async () => {
+    const hashed = await bcrypt.hash("123", 10);
+    users.push({
+        id: "user_1",
+        email: "admin@test.com",
+        password: hashed,
+        balance: 4200,
+        transactions: [
+            { type: "Starbucks, Coffee", amount: 6.50, date: new Date() },
+            { type: "Netflix Subscription", amount: 19.99, date: new Date() },
+            { type: "Deposit", amount: 500.00, date: new Date() }
+        ]
+    });
+})();
 
-// --- 3. DATABASE SCHEMA ---
-const UserSchema = new mongoose.Schema({
-    email: { type: String, unique: true, required: true },
-    password: { type: String, required: true },
-    balance: { type: Number, default: 0 },
-    lockedBonus: { type: Number, default: 0 },
-    agtTokens: { type: Number, default: 0 }, 
-    transactions: [{ type: { type: String }, amount: Number, date: { type: Date, default: Date.now } }],
-    pendingDeposits: [{ amount: Number, status: { type: String, default: 'Pending' }, date: { type: Date, default: Date.now } }]
-});
-const User = mongoose.model('User', UserSchema);
+// Helper to find user
+const findUser = (id) => users.find(u => u.id === id);
+const findUserByEmail = (email) => users.find(u => u.email === email);
 
-const MASTER_KEY = "BlezzyAdmin99#"; 
-
-// --- 4. THE NEW DASHBOARD UI (The Design You Wanted) ---
-app.get('/dashboard', async (req, res) => {
+// --- THE INTERFACE (DASHBOARD) ---
+app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    const user = await User.findById(req.session.userId);
     
-    // Mock logic for the UI visualization
-    const billsDue = 300; 
-    const available = user.balance; // Simplified for display
-    const percentage = Math.min(100, Math.max(0, (user.balance / 5000) * 100)); 
+    const user = findUser(req.session.userId);
+    if (!user) return res.redirect('/');
+
+    // Mock calculations for UI
+    const billsDue = 300;
+    const available = user.balance;
+    const percentage = 80; // Hardcoded for visual
 
     res.send(`
         <!DOCTYPE html>
@@ -130,14 +127,14 @@ app.get('/dashboard', async (req, res) => {
                 </div>
                 <div class="section-title">Smart Transaction <br><span style="font-size:12px; color:#6b7280; font-weight:400;">TODAY</span></div>
                 
-                ${user.transactions.slice().reverse().slice(0, 5).map(t => {
+                ${user.transactions.slice().reverse().map(t => {
                     let iconClass = 'fa-arrow-right-arrow-left';
                     let bgClass = 'background:#333;';
-                    let isNegative = t.type === 'Withdrawal Request' || t.type === 'AGT Purchase';
+                    let isNegative = !t.type.includes("Deposit");
                     
                     if(t.type.includes('Starbucks')) { iconClass = 'fa-mug-hot'; bgClass = 'icon-starbucks'; }
                     else if(t.type.includes('Netflix')) { iconClass = 'fa-film'; bgClass = 'icon-netflix'; }
-                    else if(t.type.includes('Deposit')) { iconClass = 'fa-arrow-down'; bgClass = 'icon-deposit'; isNegative = false; }
+                    else if(t.type.includes('Deposit')) { iconClass = 'fa-arrow-down'; bgClass = 'icon-deposit'; }
                     else { iconClass = 'fa-arrow-up'; bgClass = 'icon-withdraw'; }
 
                     return `
@@ -148,7 +145,7 @@ app.get('/dashboard', async (req, res) => {
                     </div>`;
                 }).join('')}
                 
-                <div style="text-align:center; margin-top:20px; color:#555; font-size:12px;">Admin? <a href="/admin-panel" style="color:#777;">Login here</a></div>
+                <div style="text-align:center; margin-top:20px; color:#555; font-size:12px;">Demo Mode Active</div>
             </div>
 
             <div class="bottom-dock">
@@ -174,7 +171,7 @@ app.get('/dashboard', async (req, res) => {
                     <h3>Pay / Withdraw</h3>
                     <form action="/withdraw" method="POST">
                         <input type="number" name="amount" placeholder="Amount ($)" required>
-                        <input type="text" name="wallet" placeholder="Recipient / Wallet Addr" required>
+                        <input type="text" name="wallet" placeholder="Recipient" required>
                         <button class="submit-btn" style="background:var(--accent-orange);">Send Payment</button>
                     </form>
                 </div>
@@ -195,120 +192,49 @@ app.get('/dashboard', async (req, res) => {
     `);
 });
 
-// --- 5. FUNCTIONAL ROUTES ---
-app.post('/request-deposit', async (req, res) => {
+// --- ROUTES ---
+app.post('/request-deposit', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    try {
-        const amount = parseFloat(req.body.amount);
-        if (amount > 0) {
-            await User.findByIdAndUpdate(req.session.userId, {
-                $push: { pendingDeposits: { amount: amount, status: 'Pending Review' } }
-            });
-        }
-        res.redirect('/dashboard');
-    } catch (e) { console.log(e); res.redirect('/dashboard'); }
+    const user = findUser(req.session.userId);
+    const amount = parseFloat(req.body.amount);
+    if(user && amount > 0) {
+        user.balance += amount;
+        user.transactions.push({ type: "Deposit", amount: amount, date: new Date() });
+    }
+    res.redirect('/dashboard');
 });
 
-app.post('/withdraw', async (req, res) => {
+app.post('/withdraw', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
-    try {
-        const user = await User.findById(req.session.userId);
-        const amount = parseFloat(req.body.amount);
-        if(user.balance >= amount) {
-             user.balance -= amount;
-             user.transactions.push({ type: 'Withdrawal Request', amount: amount });
-             await user.save();
-        }
-        res.redirect('/dashboard');
-    } catch(e) { console.log(e); res.redirect('/dashboard'); }
+    const user = findUser(req.session.userId);
+    const amount = parseFloat(req.body.amount);
+    if(user && user.balance >= amount) {
+        user.balance -= amount;
+        user.transactions.push({ type: "Withdrawal", amount: amount, date: new Date() });
+    }
+    res.redirect('/dashboard');
 });
 
-app.get('/admin-panel', async (req, res) => {
-    if (!req.session.userId) return res.redirect('/');
-    const user = await User.findById(req.session.userId);
-    if (user.email !== "emmanuel.iyere84@gmail.com") return res.send("Access Denied");
-    const allUsers = await User.find({});
-    
-    let html = `
-    <body style="font-family:sans-serif; padding:20px; background:#eee;">
-        <h1>Master Admin Panel</h1>
-        <table border="1" cellpadding="10" style="border-collapse:collapse; background:#fff; width:100%;">
-            <tr><th>Email</th><th>Balance</th><th>Pending Deposits</th><th>Action</th></tr>
-            ${allUsers.map(u => {
-                const pending = u.pendingDeposits.filter(d => d.status === 'Pending Review');
-                return pending.map(p => `
-                    <tr>
-                        <td>${u.email}</td>
-                        <td>$${u.balance}</td>
-                        <td>$${p.amount}</td>
-                        <td>
-                            <form action="/admin/approve-deposit" method="POST">
-                                <input type="hidden" name="userId" value="${u._id}">
-                                <input type="hidden" name="depositId" value="${p._id}">
-                                <input type="password" name="masterKey" placeholder="Master Key" required>
-                                <button type="submit" style="background:green; color:white;">Approve</button>
-                            </form>
-                        </td>
-                    </tr>
-                `).join('');
-            }).join('')}
-        </table>
-        <br><a href="/dashboard">Back to Dashboard</a>
-    </body>`;
-    res.send(html);
-});
-
-app.post('/admin/approve-deposit', async (req, res) => {
-    const { userId, depositId, masterKey } = req.body;
-    if (masterKey !== MASTER_KEY) return res.send("Invalid Master Key");
-    try {
-        const user = await User.findById(userId);
-        const deposit = user.pendingDeposits.id(depositId);
-        if (deposit && deposit.status === 'Pending Review') {
-            deposit.status = 'Completed';
-            user.balance += deposit.amount;
-            user.transactions.push({ type: 'Deposit', amount: deposit.amount });
-            await user.save();
-        }
-        res.redirect('/admin-panel');
-    } catch (e) { res.send(e.message); }
-});
-
-// --- 6. AUTH ROUTES ---
 app.get('/', (req, res) => {
     res.send(`
         <body style="background:#0b0e11; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
             <div style="text-align:center;">
-                <h1 style="color:#f0b90b;">BlezzyPay Finance</h1>
+                <h1 style="color:#f0b90b;">BlezzyPay</h1>
+                <p style="color:#888;">Demo Login: admin@test.com / 123</p>
                 <form action="/login" method="POST" style="display:flex; flex-direction:column; gap:10px; width:300px;">
-                    <input type="email" name="email" placeholder="Email" required style="padding:10px;">
-                    <input type="password" name="password" placeholder="Password" required style="padding:10px;">
+                    <input type="email" name="email" value="admin@test.com" required style="padding:10px;">
+                    <input type="password" name="password" value="123" required style="padding:10px;">
                     <button type="submit" style="padding:10px; background:#f0b90b; border:none; font-weight:bold;">LOGIN</button>
-                </form>
-                <br>
-                <form action="/register" method="POST" style="display:flex; flex-direction:column; gap:10px; width:300px;">
-                    <input type="email" name="email" placeholder="New Email" required style="padding:10px;">
-                    <input type="password" name="password" placeholder="New Password" required style="padding:10px;">
-                    <button type="submit" style="padding:10px; background:#444; color:#fff; border:none;">REGISTER</button>
                 </form>
             </div>
         </body>
     `);
 });
 
-app.post('/register', async (req, res) => {
-    try {
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-        const user = await User.create({ email: req.body.email, password: hashedPassword });
-        req.session.userId = user._id;
-        res.redirect('/dashboard');
-    } catch (e) { res.send("Error: Email likely exists."); }
-});
-
 app.post('/login', async (req, res) => {
-    const user = await User.findOne({ email: req.body.email });
+    const user = findUserByEmail(req.body.email);
     if (user && await bcrypt.compare(req.body.password, user.password)) {
-        req.session.userId = user._id;
+        req.session.userId = user.id;
         res.redirect('/dashboard');
     } else {
         res.send("Invalid credentials <a href='/'>Try Again</a>");
@@ -320,12 +246,6 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// --- 7. SERVER START ---
+// --- START SERVER ---
 const PORT = process.env.PORT || 3000;
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/blezzyDB', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log("MongoDB Connected");
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}).catch(err => console.log(err));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
