@@ -6,21 +6,43 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: 'blezzy_key_99', resave: false, saveUninitialized: true }));
 
-// --- PARTNERS ---
+// --- PARTNERS (Strictly Citi & Morgan Stanley) ---
 const partners = [
-    { name: "Citi", link: "https://www.citigroup.com", img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" },
-    { name: "Morgan Stanley", link: "https://www.morganstanley.com", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" }
+    { 
+        name: "Citi", 
+        link: "https://www.citigroup.com", 
+        img: "https://upload.wikimedia.org/wikipedia/commons/1/1b/Citi.svg" 
+    },
+    { 
+        name: "Morgan Stanley", 
+        link: "https://www.morganstanley.com", 
+        img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Morgan_Stanley_Logo_1.svg" 
+    }
 ];
 
 // --- DATABASE (In-Memory) ---
 const users = [
     { 
-        id: "admin", email: "emmanuel.iyere84@gmail.com", passcode: "1234", isAdmin: true, transactions: [] 
+        id: "admin", 
+        email: "emmanuel.iyere84@gmail.com", 
+        passcode: "1234", 
+        isAdmin: true, 
+        transactions: [] 
     },
     { 
-        id: "user1", email: "user@test.com", passcode: "1111", 
-        name: "Demo User", phone: "+1 555 0199", address: "Maputo, Mozambique", kycStatus: "Verified",
-        balance: 0, lockedCapital: 1000, lockedProfit: 200, maturityDate: "2/1/2026", agtTokens: 1000, 
+        id: "user1", 
+        email: "user@test.com", 
+        passcode: "1111", 
+        name: "Demo User", 
+        phone: "+1 555 0199", 
+        address: "Maputo, Mozambique", 
+        kycStatus: "Verified",
+        
+        balance: 0, 
+        lockedCapital: 1000, 
+        lockedProfit: 200, 
+        maturityDate: "2/1/2026", 
+        agtTokens: 1000, 
         isAdmin: false, 
         transactions: [
             { type: "Deposit", amount: 1000, date: "1/1/2026", details: "Capital Locked Forever" }, 
@@ -33,9 +55,9 @@ const users = [
 const findUser = (id) => users.find(u => u.id === id);
 const findUserByEmail = (e) => users.find(u => u.email.trim().toLowerCase() === e.trim().toLowerCase());
 
-// --- ROUTES ---
+// --- ROUTES: AUTHENTICATION ---
 
-// Login
+// Login Page
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
@@ -53,7 +75,7 @@ app.get('/', (req, res) => {
     </div></body></html>`);
 });
 
-// Sign Up
+// Sign Up Page
 app.get('/signup', (req, res) => {
     res.send(`<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
     body{background:#0f1216;color:white;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
@@ -77,11 +99,14 @@ app.get('/signup', (req, res) => {
 app.post('/register', (req, res) => {
     const { name, email, phone, address, passcode } = req.body;
     if (findUserByEmail(email)) return res.send("Email already exists. <a href='/signup'>Try Again</a>");
-    users.push({
-        id: Date.now().toString(), email, passcode, name, phone, address, 
-        kycStatus: "Unverified", balance: 0, lockedCapital: 0, lockedProfit: 0, 
+    const newUser = {
+        id: Date.now().toString(),
+        email, passcode, name, phone, address, 
+        kycStatus: "Unverified",
+        balance: 0, lockedCapital: 0, lockedProfit: 0, agtTokens: 0,
         isAdmin: false, transactions: [], pendingDeposit: null
-    });
+    };
+    users.push(newUser);
     res.redirect('/');
 });
 
@@ -94,7 +119,7 @@ app.post('/login', (req, res) => {
     res.send('Invalid Credentials. <a href="/">Try Again</a>');
 });
 
-// --- DASHBOARD (WITH AI CHAT) ---
+// --- ROUTES: DASHBOARD ---
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const u = findUser(req.session.userId);
@@ -114,28 +139,22 @@ app.get('/dashboard', (req, res) => {
         .btn-y{background:#f0b90b;color:#000} .btn-g{background:#2c333e;color:white;border:1px solid #333}
         .row{display:flex;justify-content:space-between;margin-bottom:10px}
         .stat{background:#1c2026;color:white;padding:15px;border-radius:15px;width:48%;box-sizing:border-box;border:1px solid #333}
+        
         .logo-wrap{background:black;padding:20px 0;overflow:hidden;white-space:nowrap;border-top:1px solid #222; text-align:center;}
         .logo{height:45px;margin:0 25px;opacity:0.8;vertical-align:middle;transition:0.3s; filter:brightness(0) invert(1);} 
         .logo:hover{opacity:1;transform:scale(1.1)}
+
         .tx-item{background:#181b21;color:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;border:1px solid #222}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
         .m-con{background:#1c2026;color:white;width:100%;max-width:500px;padding:30px;border-radius:24px 24px 0 0;border-top:1px solid #333}
-        input,select{width:100%;padding:15px;background:#0b0e11;border:1px solid #333;color:white;margin:10px 0;border-radius:8px;box-sizing:border-box}
+        input,select,textarea{width:100%;padding:15px;background:#0b0e11;border:1px solid #333;color:white;margin:10px 0;border-radius:8px;box-sizing:border-box}
         .top-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .set-btn{color:white;font-size:20px;text-decoration:none}
         .kyc-badge{font-size:10px; padding:3px 8px; border-radius:10px; background:#333; color:#aaa; vertical-align:middle;}
         .verified{background:rgba(0, 200, 83, 0.2); color:#00c853; font-weight:bold}
 
-        /* AI CHAT STYLES */
-        .ai-float{position:fixed;bottom:20px;right:20px;background:#f0b90b;color:black;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 5px 20px rgba(240, 185, 11, 0.4);cursor:pointer;z-index:999;}
-        .chat-box{display:none;position:fixed;bottom:90px;right:20px;width:300px;background:#1c2026;border-radius:20px;border:1px solid #333;box-shadow:0 10px 40px rgba(0,0,0,0.5);overflow:hidden;z-index:999;flex-direction:column;}
-        .chat-head{background:#f0b90b;padding:15px;color:black;font-weight:bold;display:flex;justify-content:space-between;align-items:center;}
-        .chat-msgs{height:300px;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;}
-        .msg{padding:8px 12px;border-radius:12px;max-width:80%;font-size:13px;line-height:1.4;}
-        .msg-ai{background:#2c333e;color:white;align-self:flex-start;border-bottom-left-radius:0;}
-        .msg-u{background:#f0b90b;color:black;align-self:flex-end;border-bottom-right-radius:0;}
-        .chat-inp{display:flex;border-top:1px solid #333;padding:10px;background:#16191f;}
-        .chat-inp input{margin:0;border:none;background:transparent;flex:1;outline:none;}
-        .chat-inp button{width:auto;margin:0;padding:8px 15px;border-radius:50px;background:#f0b90b;color:black;}
+        /* CONTACT FLOAT */
+        .float-btn{position:fixed;bottom:20px;right:20px;background:#f0b90b;color:black;width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 5px 20px rgba(240, 185, 11, 0.4);cursor:pointer;z-index:999;}
     </style></head><body>
     <div class="tick">BTC $98,420 &nbsp;&nbsp; ETH $3,150 &nbsp;&nbsp; XRP $1.12 &nbsp;&nbsp; USDT $1.00</div>
     <div class="con">
@@ -145,7 +164,7 @@ app.get('/dashboard', (req, res) => {
                 <p style="margin:5px 0 0 0;font-size:12px;color:#888">BlezzyPay Premier</p>
             </div>
             <div>
-                <a href="/settings" style="color:white;font-size:20px;margin-right:15px"><i class="fa-solid fa-gear"></i></a>
+                <a href="/settings" class="set-btn" style="margin-right:15px"><i class="fa-solid fa-gear"></i></a>
                 <a href="/logout" style="color:#ff4757;font-size:20px"><i class="fa-solid fa-power-off"></i></a>
             </div>
         </div>
@@ -172,32 +191,27 @@ app.get('/dashboard', (req, res) => {
         </div>
 
         <h3>History</h3>
+        ${u.transactions.length === 0 ? '<p style="color:#666;font-size:12px">No transactions yet.</p>' : ''}
         ${u.transactions.slice().reverse().map(t => `<div class="tx-item"><div><b>${t.type}</b><br><small style="color:#888">${t.details||t.date}</small></div><b>$${t.amount}</b></div>`).join('')}
     </div>
 
     <div style="text-align:center;font-size:10px;color:#666;text-transform:uppercase;font-weight:bold;background:black;padding-top:20px;margin-top:20px;border-top:1px solid #222">Strategic Partners</div>
     <div class="logo-wrap">${logos}</div>
 
-    <div class="ai-float" onclick="toggleChat()"><i class="fa-solid fa-robot"></i></div>
-    <div class="chat-box" id="chatBox">
-        <div class="chat-head"><span>Blezzy AI</span><i class="fa-solid fa-xmark" onclick="toggleChat()" style="cursor:pointer"></i></div>
-        <div class="chat-msgs" id="chatMsgs">
-            <div class="msg msg-ai">Hello ${u.name.split(' ')[0]}! I am Blezzy AI. How can I help you today?</div>
-        </div>
-        <div class="chat-inp">
-            <input type="text" id="userMsg" placeholder="Ask about deposit, yield..." onkeypress="handleEnter(event)">
-            <button onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </div>
+    <div class="float-btn" onclick="openM('contact')"><i class="fa-solid fa-envelope"></i></div>
 
     <div id="dep" class="modal"><div class="m-con">
-        <h3>Deposit Funds</h3><form action="/dep" method="POST">
+        <h3>Deposit Funds</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:15px">Note: Capital is locked permanently. You earn 20% interest which unlocks every 30 days.</p>
+        <form action="/dep" method="POST">
         <input type="number" name="amount" placeholder="Amount (USD)" required><button class="btn btn-y" style="width:100%">PROCEED</button></form>
         <br><button onclick="closeM()" style="background:none;border:none;color:#888;cursor:pointer">Close</button>
     </div></div>
 
     <div id="with" class="modal"><div class="m-con">
-        <h3>Withdraw Interest ($${u.balance})</h3><form action="/with" method="POST">
+        <h3>Withdraw Interest ($${u.balance})</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:15px">You can only withdraw from "Earned Cash". Capital remains locked.</p>
+        <form action="/with" method="POST">
         <input type="number" name="amount" placeholder="Amount" max="${u.balance}" required>
         <select name="type"><option value="std">Standard (48h) - Free</option><option value="inst">Instant - 3% Fee</option></select>
         <input placeholder="Bank Name" required><input placeholder="Account No" required>
@@ -205,48 +219,19 @@ app.get('/dashboard', (req, res) => {
         <br><button onclick="closeM()" style="background:none;border:none;color:#888;cursor:pointer">Close</button>
     </div></div>
 
+    <div id="contact" class="modal"><div class="m-con">
+        <h3>Contact Support</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:15px">We typically respond within 24 hours.</p>
+        <form action="/contact" method="POST">
+        <input type="text" name="subject" placeholder="Subject" required>
+        <textarea name="message" placeholder="Describe your issue..." style="height:100px;font-family:sans-serif;" required></textarea>
+        <button class="btn btn-y" style="width:100%">SEND EMAIL</button></form>
+        <br><button onclick="closeM()" style="background:none;border:none;color:#888;cursor:pointer">Close</button>
+    </div></div>
+
     <script>
     function openM(id){document.getElementById(id).style.display='flex'}
     function closeM(){document.querySelectorAll('.modal').forEach(e=>e.style.display='none')}
-    
-    // AI CHAT LOGIC
-    function toggleChat() {
-        const box = document.getElementById('chatBox');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-    }
-    function handleEnter(e) { if(e.key === 'Enter') sendMsg(); }
-    
-    function sendMsg() {
-        const input = document.getElementById('userMsg');
-        const txt = input.value.trim();
-        if(!txt) return;
-        
-        addMsg(txt, 'u');
-        input.value = '';
-        
-        // Simulating AI Thinking
-        setTimeout(() => {
-            let reply = "I'm not sure about that. Try asking about deposits or withdrawals.";
-            const l = txt.toLowerCase();
-            
-            if(l.includes('deposit')) reply = "To deposit, click the DEPOSIT button. Funds are permanently locked to generate yield.";
-            else if(l.includes('withdraw')) reply = "You can only withdraw your 'Earned Cash'. Your capital remains locked.";
-            else if(l.includes('yield') || l.includes('profit')) reply = "You earn 20% interest on your locked capital. This unlocks every 30 days.";
-            else if(l.includes('kyc') || l.includes('verify')) reply = "Go to Settings (Gear Icon) to verify your identity.";
-            else if(l.includes('hello') || l.includes('hi')) reply = "Hello! Ready to grow your wealth today?";
-            
-            addMsg(reply, 'ai');
-        }, 800);
-    }
-    
-    function addMsg(txt, type) {
-        const area = document.getElementById('chatMsgs');
-        const div = document.createElement('div');
-        div.className = 'msg msg-' + type;
-        div.innerText = txt;
-        area.appendChild(div);
-        area.scrollTop = area.scrollHeight;
-    }
     </script>
     </body></html>`);
 });
@@ -280,6 +265,13 @@ app.get('/kyc-page', (req, res) => {
 
 app.post('/submit-kyc', (req, res) => { findUser(req.session.userId).kycStatus = "Pending"; res.redirect('/settings'); });
 app.post('/close-account', (req, res) => { users.splice(users.findIndex(u=>u.id===req.session.userId),1); req.session.destroy(); res.redirect('/'); });
+
+// --- CONTACT ---
+app.post('/contact', (req, res) => {
+    // In a real app, this would send an actual email via SMTP
+    console.log(`[EMAIL] From: ${req.session.userId} | Subject: ${req.body.subject} | Msg: ${req.body.message}`);
+    res.redirect('/dashboard');
+});
 
 // --- PAYMENTS ---
 app.post('/dep', (req, res) => {
@@ -353,8 +345,11 @@ app.get('/admin', (req, res) => {
     if (!u || !u.isAdmin) return res.redirect('/');
     const pending = users.filter(x => x.pendingDeposit && x.pendingDeposit.status === "Pending");
     res.send(`<body style="background:#0f1216;color:white;padding:20px;font-family:sans-serif">
-    <h1>Admin</h1>
-    <form action="/release" method="POST"><button style="padding:10px;background:#f0b90b;color:black;font-weight:bold;cursor:pointer;border:none;border-radius:5px">⚡ PROCESS 30-DAY PAYOUTS</button></form>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h1>Admin Panel</h1>
+        <a href="/logout" style="color:#ff4757;text-decoration:none;font-weight:bold;border:1px solid #ff4757;padding:5px 10px;border-radius:5px">Logout</a>
+    </div>
+    <form action="/release" method="POST"><button style="padding:10px;background:#f0b90b;color:black;font-weight:bold;cursor:pointer;border:none;border-radius:5px">⚡ PROCESS 30-DAY PAYOUTS (YIELD ONLY)</button></form>
     <p style="color:#888;font-size:12px">Clicking above moves "Pending Yield" to "Available Cash". Capital stays Locked.</p>
     <hr style="border-color:#333">
     ${pending.map(x => `<div style="background:#1c2026;padding:10px;margin-bottom:5px;border:1px solid #333"><b>${x.email}</b> claims $${x.pendingDeposit.amount} 
