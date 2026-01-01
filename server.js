@@ -13,21 +13,33 @@ mongoose.connect(mongoURI)
 
 // 2. MIDDLEWARE
 app.use(express.json());
-// This line serves your CSS, Images, and JS from a folder named "public"
-app.use(express.static(path.join(__dirname, 'public')));
 
-// 3. ROUTES
-// Serves your main HTML file when someone visits the URL
+// 3. SMART FILE SERVING
+// This tells Express to look for your HTML/CSS files in 'public' first, then the root
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
+
+// 4. MAIN ROUTE
 app.get('/', (req, res) => {
-    // If you have an index.html in a 'public' folder:
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    
-    // OR, if you don't have an HTML file yet, keep this test line:
-    // res.send('<h1>Blezzy Wallet is officially Live and Connected!</h1>');
+    // This looks for index.html in /public, and falls back to / if not found
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    const rootPath = path.join(__dirname, 'index.html');
+
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            // If not in public, try the root directory
+            res.sendFile(rootPath, (rootErr) => {
+                if (rootErr) {
+                    // If no file exists at all, show this success message
+                    res.status(200).send('<h1>Blezzy Wallet is Live!</h1><p>Note: index.html was not found, but your server is working.</p>');
+                }
+            });
+        }
+    });
 });
 
-// 4. SERVER PORT
-// Render uses process.env.PORT (usually 10000), but we allow 3000 for local testing
+// 5. SERVER PORT
+// Render uses process.env.PORT, but we allow 3000 for local testing
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
