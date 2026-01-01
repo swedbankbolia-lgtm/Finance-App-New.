@@ -4,34 +4,34 @@ const path = require('path');
 const app = express();
 
 // 1. DATABASE CONNECTION
-// Uses Render environment variable or falls back to local for development
-const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/blezzy_wallet';
+// Updated to use 'finance_app_db' instead of blezzy
+const mongoURI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/finance_app_db';
 
 mongoose.connect(mongoURI)
-    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .then(() => console.log('✅ Connected to Finance App Database'))
     .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // 2. MIDDLEWARE
 app.use(express.json());
 
 // 3. SMART FILE SERVING
-// This tells Express to look for your HTML/CSS files in 'public' first, then the root
-app.use(express.static(path.join(__dirname, 'public')));
+// This tells the app to look in the root of "Finance-App-New"
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 4. MAIN ROUTE
 app.get('/', (req, res) => {
-    // This looks for index.html in /public, and falls back to / if not found
-    const indexPath = path.join(__dirname, 'public', 'index.html');
-    const rootPath = path.join(__dirname, 'index.html');
+    // Aggressively looking for your index.html in the Finance-App-New structure
+    const paths = [
+        path.join(__dirname, 'index.html'),
+        path.join(__dirname, 'public', 'index.html')
+    ];
 
-    res.sendFile(indexPath, (err) => {
+    res.sendFile(paths[0], (err) => {
         if (err) {
-            // If not in public, try the root directory
-            res.sendFile(rootPath, (rootErr) => {
-                if (rootErr) {
-                    // If no file exists at all, show this success message
-                    res.status(200).send('<h1>Blezzy Wallet is Live!</h1><p>Note: index.html was not found, but your server is working.</p>');
+            res.sendFile(paths[1], (err2) => {
+                if (err2) {
+                    res.send('<h1>Finance App is Live!</h1><p>Check if index.html is in your Finance-App-New folder on GitHub.</p>');
                 }
             });
         }
@@ -39,9 +39,8 @@ app.get('/', (req, res) => {
 });
 
 // 5. SERVER PORT
-// Render uses process.env.PORT, but we allow 3000 for local testing
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`🚀 Finance App running on port ${PORT}`);
 });
