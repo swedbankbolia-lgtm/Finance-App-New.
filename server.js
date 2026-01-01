@@ -305,12 +305,46 @@ app.post('/dep', (req, res) => {
 app.get('/pay-now', (req, res) => {
     const u = findUser(req.session.userId);
     if (!u.pendingDeposit) return res.redirect('/dashboard');
-    res.send(`<body style="background:#0f1216;color:white;font-family:sans-serif;padding:20px;text-align:center">
-    <h1 style="color:#f0b90b">$${u.pendingDeposit.amount}</h1>
-    <div style="background:#1c2026;color:white;padding:20px;margin:10px auto;max-width:400px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.5);border:1px solid #333">
-    <b>US:</b> Bank of America | 026009593<br><br><b>EU:</b> Barclay | GB33BARC20658259151311<br><br><b>Bitcoin:</b> bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7
+    res.send(`<body style="background:#0f1216;color:white;font-family:sans-serif;padding:20px;">
+    <div style="max-width:400px;margin:0 auto">
+        <h1 style="color:#f0b90b;text-align:center">$${u.pendingDeposit.amount}</h1>
+        
+        <div style="background:#1c2026;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #333">
+            <h3 style="color:#f0b90b;margin-top:0;border-bottom:1px solid #333;padding-bottom:10px">🇺🇸 US Account</h3>
+            <p style="margin:5px 0"><b>Bank:</b> Bank of America</p>
+            <p style="margin:5px 0"><b>Account:</b> 026009593</p>
+        </div>
+
+        <div style="background:#1c2026;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #333">
+            <h3 style="color:#f0b90b;margin-top:0;border-bottom:1px solid #333;padding-bottom:10px">🇪🇺 EU Account</h3>
+            <p style="margin:5px 0"><b>Bank:</b> Barclay</p>
+            <p style="margin:5px 0"><b>Name:</b> Hillside (Sports) GP Limited</p>
+            <p style="margin:5px 0"><b>Account:</b> GB33BARC20658259151311</p>
+            <p style="margin:5px 0"><b>Ref:</b> infogloirebanco</p>
+        </div>
+
+        <div style="background:#1c2026;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #333">
+            <h3 style="color:#f0b90b;margin-top:0;border-bottom:1px solid #333;padding-bottom:10px">🇺🇬 Africa (Uganda)</h3>
+            <p style="margin:5px 0"><b>Bank:</b> Equity Bank</p>
+            <p style="margin:5px 0"><b>Account:</b> 1003103498481</p>
+            <p style="margin:5px 0"><b>Ref:</b> Annet</p>
+        </div>
+
+        <div style="background:#1c2026;padding:20px;border-radius:12px;margin-bottom:15px;border:1px solid #333">
+            <h3 style="color:#f0b90b;margin-top:0;border-bottom:1px solid #333;padding-bottom:10px">🇿🇦 South Africa</h3>
+            <p style="margin:5px 0"><b>Bank:</b> Capitec Bank</p>
+            <p style="margin:5px 0"><b>Account:</b> 1882242481</p>
+            <p style="margin:5px 0"><b>Ref:</b> BlezzyPay</p>
+        </div>
+
+        <div style="background:#1c2026;padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid #333">
+            <h3 style="color:#f0b90b;margin-top:0;border-bottom:1px solid #333;padding-bottom:10px">₿ Crypto (Bitcoin)</h3>
+            <p style="font-size:12px;word-break:break-all">bc1qn4ajq8fppd3derk8a24w75jkk94pjynn063gm7</p>
+        </div>
+
+        <form action="/sent" method="POST"><button style="padding:15px;width:100%;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px">I SENT PAYMENT</button></form>
+        <div style="text-align:center;margin-top:15px"><a href="/dashboard" style="color:#888;text-decoration:none">Cancel</a></div>
     </div>
-    <form action="/sent" method="POST"><button style="padding:15px;width:100%;max-width:400px;background:#00c853;border:none;font-weight:bold;cursor:pointer;color:white;border-radius:10px;margin-top:10px">I SENT PAYMENT</button></form>
     </body>`);
 });
 
