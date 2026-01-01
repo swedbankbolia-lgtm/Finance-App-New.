@@ -1,19 +1,18 @@
 {
-  "name": "finance-app",
+  "name": "blezzy-wallet",
   "version": "1.0.0",
-  "description": "Personal Finance Tracker",
+  "description": "Smart Wallet Interface",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^7.0.0",
     "bcryptjs": "^2.4.3",
+    "express": "^4.18.2",
     "express-session": "^1.17.3",
-    "ejs": "^3.1.9"
+    "nodemailer": "^6.9.1"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=16.0.0"
   }
 }
