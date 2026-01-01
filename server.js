@@ -1,54 +1,46 @@
 const express = require('express');
 const session = require('express-session');
-const bcrypt = require('bcryptjs');
 const app = express();
 
-// --- CONFIGURATION ---
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // serves static files if you have them
+// --- 1. CONFIGURATION ---
+app.use(express.urlencoded({ extended: true })); // Allows us to read the login form
 app.use(session({ 
     secret: 'blezzy_secret_key_2026', 
     resave: false, 
     saveUninitialized: true 
 }));
 
-// --- IN-MEMORY DATABASE (No MongoDB required) ---
-// This ensures the app works immediately on Render without crashing.
-const users = [];
-
-// Create a default admin user instantly
-// Email: admin@test.com
-// Password: 123
-(async () => {
-    const hashed = await bcrypt.hash("123", 10);
-    users.push({
+// --- 2. MOCK DATABASE (Synchronous & Fail-Proof) ---
+// We define the user directly with a plain text password for the demo.
+const users = [
+    {
         id: "user_1",
         email: "admin@test.com",
-        password: hashed,
-        balance: 4200,
+        password: "123", // PLAIN TEXT PASSWORD (No encryption for demo)
+        balance: 4200.50,
         transactions: [
             { type: "Starbucks, Coffee", amount: 6.50, date: new Date() },
             { type: "Netflix Subscription", amount: 19.99, date: new Date() },
             { type: "Deposit", amount: 500.00, date: new Date() }
         ]
-    });
-})();
+    }
+];
 
 // Helper to find user
 const findUser = (id) => users.find(u => u.id === id);
 const findUserByEmail = (email) => users.find(u => u.email === email);
 
-// --- THE INTERFACE (DASHBOARD) ---
+// --- 3. THE DASHBOARD UI ---
 app.get('/dashboard', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     
     const user = findUser(req.session.userId);
-    if (!user) return res.redirect('/');
+    if (!user) return res.redirect('/'); // Safety check
 
-    // Mock calculations for UI
+    // Visual Calculations
     const billsDue = 300;
     const available = user.balance;
-    const percentage = 80; // Hardcoded for visual
+    const percentage = 80;
 
     res.send(`
         <!DOCTYPE html>
@@ -192,7 +184,7 @@ app.get('/dashboard', (req, res) => {
     `);
 });
 
-// --- ROUTES ---
+// --- 4. ACTION ROUTES ---
 app.post('/request-deposit', (req, res) => {
     if (!req.session.userId) return res.redirect('/');
     const user = findUser(req.session.userId);
@@ -215,6 +207,7 @@ app.post('/withdraw', (req, res) => {
     res.redirect('/dashboard');
 });
 
+// --- 5. AUTHENTICATION (Simplified) ---
 app.get('/', (req, res) => {
     res.send(`
         <body style="background:#0b0e11; color:#fff; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
@@ -231,9 +224,12 @@ app.get('/', (req, res) => {
     `);
 });
 
-app.post('/login', async (req, res) => {
+// LOGIN LOGIC - PLAIN TEXT CHECK
+app.post('/login', (req, res) => {
     const user = findUserByEmail(req.body.email);
-    if (user && await bcrypt.compare(req.body.password, user.password)) {
+    
+    // DIRECT COMPARISON (No "bcrypt.compare" so it cannot fail)
+    if (user && user.password === req.body.password) {
         req.session.userId = user.id;
         res.redirect('/dashboard');
     } else {
