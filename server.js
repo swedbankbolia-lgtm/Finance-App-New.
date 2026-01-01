@@ -1,36 +1,27 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const app = express();
-
-// 1. DATABASE CONNECTION
-// We FORCE the use of the environment variable. 
-// If it's missing, the app will tell us clearly in the logs.
-const mongoURI = process.env.MONGODB_URI;
-
-if (!mongoURI) {
-    console.error("❌ ERROR: MONGODB_URI is not defined in Render Environment Variables!");
-} else {
-    mongoose.connect(mongoURI)
-        .then(() => console.log('✅ Connected to MongoDB Atlas'))
-        .catch(err => console.error('❌ MongoDB Connection Error:', err));
-}
-
-// 2. MIDDLEWARE & STATIC FILES
-app.use(express.json());
-app.use(express.static(__dirname));
-
-// 3. ROUTES
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
-        if (err) {
-            res.send("<h1>Finance App Live</h1><p>Database status: Check Logs.</p>");
-        }
-    });
+// 1. Define the Referral Schema
+const referralSchema = new mongoose.Schema({
+    code: { type: String, required: true, unique: true },
+    ownerName: String,
+    uses: { type: Number, default: 0 },
+    active: { type: Boolean, default: true }
 });
 
-// 4. PORT
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server listening on port ${PORT}`);
+const Referral = mongoose.model('Referral', referralSchema);
+
+// 2. Create the API Route to check codes
+app.post('/api/verify-referral', async (req, res) => {
+    const { code } = req.body;
+    try {
+        const validCode = await Referral.findOne({ code: code, active: true });
+        if (validCode) {
+            // Increase use count
+            validCode.uses += 1;
+            await validCode.save();
+            res.json({ success: true, message: "Access Granted" });
+        } else {
+            res.json({ success: false, message: "Invalid or Expired Code" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, error: "Server Error" });
+    }
 });
